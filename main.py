@@ -11,6 +11,7 @@ Contains functions corresponding to the class assignments:
 * `exercise_2_1()` runs the Kaggle + MySQL lab workflow
 * `exercise_2_2()` guides the Metabase + MySQL exploration workflow
 * `exercise_2_3()` guides the Neo4j Browser tutorials + Python Cypher workflow
+* `exercise_2_4()` guides the OpenSearch dashboard exploration workflow
 
 The functions are called from the standard ``if __name__ == '__main__'``
 guard at the bottom; importing this module does not execute any plotting by
@@ -21,6 +22,9 @@ import inspect
 import argparse
 import os
 import shutil
+import urllib.request
+import urllib.error
+from base64 import b64encode
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -1034,6 +1038,56 @@ def exercise_2_3():
             " In Neo4j Browser, load a sample graph and rerun."
         )
         print("Tip: run ':play movie graph' in Browser to load demo data.")
+
+
+def exercise_2_4():
+    """Guide and validate the OpenSearch Dashboards workflow for exercise 2.4."""
+    dashboards_url = "http://localhost:5601"
+    opensearch_url = "http://localhost:9200"
+    username = os.getenv("OPENSEARCH_USER", "admin").strip() or "admin"
+    password = os.getenv("OPENSEARCH_PASSWORD", "@StrongP4ssword!")
+
+    print(f"[Exercise 2.4] OpenSearch Dashboards URL: {dashboards_url}")
+    print("[Exercise 2.4] credentials:")
+    print(f"  user={username}")
+    print(f"  password={password}")
+    print("\n[Exercise 2.4] optional task: explore the web interface and sample data.")
+
+    compose_path = Path("exercise_2_4/compose.yaml")
+    if compose_path.is_file():
+        print("\n[Exercise 2.4] if services are not running, start them with:")
+        print("  docker compose -f exercise_2_4/compose.yaml up -d")
+    else:
+        print("\n[Exercise 2.4] warning: compose file not found at exercise_2_4/compose.yaml")
+
+    try:
+        with urllib.request.urlopen(dashboards_url, timeout=5) as resp:
+            print(f"\n[Exercise 2.4] Dashboards reachable: HTTP {resp.status}")
+    except Exception as exc:
+        print(f"\n[Exercise 2.4] Dashboards check failed: {exc}")
+        print("Start the stack, then open http://localhost:5601 in your browser.")
+        return
+
+    auth_raw = f"{username}:{password}".encode("utf-8")
+    auth_header = b64encode(auth_raw).decode("ascii")
+    request = urllib.request.Request(opensearch_url)
+    request.add_header("Authorization", f"Basic {auth_header}")
+
+    try:
+        with urllib.request.urlopen(request, timeout=5) as resp:
+            print(f"[Exercise 2.4] OpenSearch API reachable: HTTP {resp.status}")
+    except urllib.error.HTTPError as exc:
+        print(f"[Exercise 2.4] OpenSearch API check returned HTTP {exc.code}")
+        print("If security is disabled in compose, this can still be acceptable.")
+    except Exception as exc:
+        print(f"[Exercise 2.4] OpenSearch API check failed: {exc}")
+        print("Verify the OpenSearch container is running and port 9200 is exposed.")
+
+    print("\n[Exercise 2.4] next steps in Dashboards:")
+    print("1. Open http://localhost:5601.")
+    print("2. Log in with admin / @StrongP4ssword! (if prompted).")
+    print("3. Add and explore available sample data.")
+    print("4. Build simple visualizations and dashboards.")
 
 
 def _discover_exercises():

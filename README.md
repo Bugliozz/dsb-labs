@@ -66,6 +66,7 @@ python main.py --exercise all
 - `exercise_2_1`: Kaggle ingestion + MySQL upload workflow.
 - `exercise_2_2`: Metabase login + MySQL connection and data exploration workflow.
 - `exercise_2_3`: Neo4j Browser tutorials + Python Cypher query replication workflow.
+- `exercise_2_4`: OpenSearch Dashboards optional exploration workflow.
 
 ## Project Structure
 
@@ -82,6 +83,7 @@ exercise1/
   exercise_2_1/
   exercise_2_2/
   exercise_2_3/
+  exercise_2_4/
 ```
 
 ## Data Notes
@@ -145,4 +147,26 @@ Then replicate some queries from Python:
 
 ```bash
 python main.py --exercise 2_3
+```
+
+## Exercise 2.4 (Optional, OpenSearch)
+
+Open OpenSearch Dashboards:
+
+- URL: `http://localhost:5601`
+- User: `admin`
+- Password: `@StrongP4ssword!`
+
+Start the optional OpenSearch stack:
+
+```bash
+docker compose -f exercise_2_4/compose.yaml up -d
+```
+
+Then explore the available sample data from the web interface.
+
+Optional helper command:
+
+```bash
+python main.py --exercise 2_4
 ```
