@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=pass
+    ports:
+      - "3306:3306"
+
+  # phpMyAdmin
+  # http://localhost:8080/  Server=db Username=root Password=pass
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_ARBITRARY=1
+
+  # Metabase
+  # http://localhost:3000
+  metabase:
+    image: metabase/metabase
+    restart: always
+    ports:
+      - "3000:3000"
+
+  # Neo4j
+  # http://localhost:7474  Username=neo4j Password=test12345
+  neo4j:
+    image: neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/test12345
+
+networks:
+  network1:
+    external: true

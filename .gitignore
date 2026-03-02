@@ -208,3 +208,7 @@ __marimo__/
 
 # Docker runtime data
 exercise_1_6/dokuwiki_data/
+
+# Exercise 2.1 downloaded datasets
+exercise_2_1/datasets/
+

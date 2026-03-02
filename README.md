@@ -1,170 +1,107 @@
-# Data Science for Business Lab - Exercise 1
+# Data Science for Business Labs
 
-## Setup
+A curated collection of Python labs developed for the **Data Science for Business** course.
+The project combines data visualization, exploratory analysis, and Docker-based data tooling workflows.
 
-Clone the repository and install dependencies:
+## Portfolio Highlights
+
+- Clean CLI runner (`main.py`) to execute one or multiple exercises.
+- Reproducible visual analytics with `pandas`, `matplotlib`, and `seaborn`.
+- Multi-service data stack for hands-on tooling practice (`MySQL`, `phpMyAdmin`, `Metabase`, `Neo4j`).
+- Structured output folders (`datasets/`, `images/`) for each exercise.
+
+## Tech Stack
+
+- Python 3.10+
+- pandas, NumPy, Matplotlib, Seaborn
+- SQLAlchemy + MySQL connector
+- Docker / Docker Compose
+- KaggleHub (for selected datasets)
+
+## Quick Start
 
 ```bash
-git clone git@github.com:mb-uninsubria/exercise1.git
+git clone git@github.com:Bugliozz/exercise1.git
 cd exercise1
-python -m venv env           # or another virtual environment tool
-# on Unix/macOS
-source env/bin/activate
-# on Windows PowerShell
-# env\Scripts\Activate.ps1
+python -m venv .venv
+# Linux/macOS
+source .venv/bin/activate
+# Windows PowerShell
+# .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-Run the script:
+Run the CLI:
 
 ```bash
 python main.py
 ```
 
-When launched without arguments, the terminal asks which exercise(s) to run
-(for example `1_2`, `1_3`, or `tutti`).
-
-Run a specific exercise only:
+Run a specific exercise:
 
 ```bash
 python main.py --exercise 1_5
 ```
 
-Run multiple selected exercises:
+Run multiple exercises:
 
 ```bash
 python main.py --exercise 1_3 1_5
 ```
 
-Run all exercises explicitly:
+Run all:
 
 ```bash
-python main.py --exercise tutti
+python main.py --exercise all
 ```
 
-## Project structure
+## Exercises
+
+- `exercise_1_2`: multi-panel plotting layout.
+- `exercise_1_3`: composed Seaborn figure (line/scatter/bar/heatmap).
+- `exercise_1_4`: EDA on Indian Liver Patient Records.
+- `exercise_1_5`: ETF correlation analysis (heatmap + ellipse matrix).
+- `exercise_1_6`: Docker + DokuWiki lab scaffold.
+- `exercise_1_7`: Flask + Docker lab scaffold.
+- `exercise_2_1`: Kaggle ingestion + MySQL upload workflow.
+
+## Project Structure
 
 ```text
 exercise1/
   main.py
   requirements.txt
   exercise_1_2/
-    images/
-      exercise1_plots.png
-    datasets/
   exercise_1_3/
-    images/
-      exercise1_3.png
-    datasets/
   exercise_1_4/
-    images/
-      exercise1_4_*.png
-    datasets/
-      indian_liver_patient.csv
   exercise_1_5/
-    images/
-      exercise1_5_etf_correlation_*.png
-    datasets/
-      sp500_data.csv.gz
-      sp500_sectors.csv
   exercise_1_6/
-    docker-compose.yml
-    README.md
-    dokuwiki_data/
   exercise_1_7/
-    app.py
-    requirements.txt
-    Dockerfile
-    README.md
+  exercise_2_1/
 ```
 
-## Exercise 1.2
+## Data Notes
 
-`exercise_1_2()` creates the composite 2x4 figure and saves:
+- Some datasets are expected locally for reproducibility.
+- Kaggle-based steps require valid Kaggle credentials configured in your environment.
+- Generated images are included where useful to document outputs.
 
-- `exercise_1_2/images/exercise1_plots.png`
+## Exercise 2.1 Services
 
-## Exercise 1.3
-
-`exercise_1_3()` creates the 2x2 Seaborn figure and saves:
-
-- `exercise_1_3/images/exercise1_3.png`
-
-## Optional Exercise 1.4
-
-For the Indian Liver Patient Records dataset:
-
-1. Download the CSV from:
-   https://www.kaggle.com/datasets/uciml/indian-liver-patient-records
-2. Put the file in:
-   `exercise_1_4/datasets/indian_liver_patient.csv`
-3. Run `python main.py`.
-
-Generated charts are saved in:
-
-- `exercise_1_4/images/`
-
-## Exercise 1.5 (PS4DS Chapter 1 replica)
-
-`exercise_1_5()` replicates the ETF correlation visualizations from:
-
-- https://github.com/gedeck/practical-statistics-for-data-scientists
-- Notebook: `python/notebooks/Chapter 1 - Exploratory Data Analysis.ipynb`
-
-Datasets used:
-
-- `exercise_1_5/datasets/sp500_data.csv.gz`
-- `exercise_1_5/datasets/sp500_sectors.csv`
-
-Generated charts:
-
-- `exercise_1_5/images/exercise1_5_etf_correlation_heatmap.png`
-- `exercise_1_5/images/exercise1_5_etf_correlation_ellipses.png`
-
-## Exercise 1.6 (Docker + DokuWiki)
-
-`exercise_1_6()` creates a complete Docker lab scaffold:
-
-- `exercise_1_6/docker-compose.yml`
-- `exercise_1_6/README.md`
-- `exercise_1_6/dokuwiki_data/` (persistent storage)
-
-Run:
+Start the service stack:
 
 ```bash
-python main.py --exercise 1_6
+docker compose -f exercise_2_1/compose.yaml up -d
 ```
 
-Then:
+Available interfaces:
+
+- phpMyAdmin: `http://localhost:8080`
+- Metabase: `http://localhost:3000`
+- Neo4j: `http://localhost:7474`
+
+Then run:
 
 ```bash
-cd exercise_1_6
-docker compose up -d
+python main.py --exercise 2_1
 ```
-
-Open `http://localhost:8080/`.
-
-## Exercise 1.7 (Flask + Docker)
-
-`exercise_1_7()` creates a dedicated Flask + Docker lab scaffold:
-
-- `exercise_1_7/app.py`
-- `exercise_1_7/requirements.txt`
-- `exercise_1_7/Dockerfile`
-- `exercise_1_7/README.md`
-
-Run:
-
-```bash
-python main.py --exercise 1_7
-```
-
-Then:
-
-```bash
-cd exercise_1_7
-docker build --tag python-docker .
-docker run -d -p 5000:5000 --name python-docker-lab python-docker
-```
-
-Open `http://localhost:5000/`.

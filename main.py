@@ -8,6 +8,7 @@ Contains functions corresponding to the class assignments:
 * `exercise_1_5()` replicates the ETF correlation plots from PS4DS Chapter 1
 * `exercise_1_6()` prepares a Docker/DokuWiki lab scaffold
 * `exercise_1_7()` prepares a Flask + Docker lab scaffold
+* `exercise_2_1()` runs the Kaggle + MySQL lab workflow
 
 The functions are called from the standard ``if __name__ == '__main__'``
 guard at the bottom; importing this module does not execute any plotting by
@@ -16,6 +17,8 @@ itself.
 
 import inspect
 import argparse
+import os
+import shutil
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -24,6 +27,90 @@ import seaborn as sns
 from matplotlib import gridspec
 from matplotlib.collections import EllipseCollection
 from matplotlib.colors import Normalize
+
+
+def _read_csv_with_auto_separator(csv_path: Path) -> tuple[pd.DataFrame, str]:
+    """Read a CSV trying comma first and semicolon as fallback."""
+    df = pd.read_csv(csv_path)
+    if len(df.columns) == 1:
+        df = pd.read_csv(csv_path, sep=";")
+        return df, ";"
+    return df, ","
+
+
+def _convert_text_binary_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """Convert binary text columns (yes/no etc.) to integer 0/1."""
+    converted = {}
+    out = df.copy()
+    for col in out.columns:
+        if not (pd.api.types.is_object_dtype(out[col]) or pd.api.types.is_string_dtype(out[col])):
+            continue
+
+        normalized = out[col].dropna().astype(str).str.strip().str.lower()
+        unique_vals = set(normalized.unique())
+        mapping = None
+        if unique_vals == {"yes", "no"}:
+            mapping = {"no": 0, "yes": 1}
+        elif unique_vals == {"true", "false"}:
+            mapping = {"false": 0, "true": 1}
+        elif unique_vals == {"y", "n"}:
+            mapping = {"n": 0, "y": 1}
+
+        if mapping is None:
+            continue
+
+        out[col] = out[col].astype(str).str.strip().str.lower().map(mapping).astype("Int64")
+        converted[col] = mapping
+
+    return out, converted
+
+
+def _download_dataset_csvs(dataset_id: str, target_dir: Path, kagglehub_module) -> list[Path]:
+    """Download a Kaggle dataset and copy all CSV files to target_dir."""
+    cache_path = Path(kagglehub_module.dataset_download(dataset_id))
+    csv_files = sorted(cache_path.rglob("*.csv"))
+    if not csv_files:
+        raise FileNotFoundError(f"No CSV files found for dataset '{dataset_id}'")
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    copied_files = []
+    for src in csv_files:
+        dest = target_dir / src.name
+        shutil.copy2(src, dest)
+        copied_files.append(dest)
+    return copied_files
+
+
+def _existing_csvs(target_dir: Path) -> list[Path]:
+    """Return existing CSV files in target_dir."""
+    if not target_dir.is_dir():
+        return []
+    return sorted(target_dir.rglob("*.csv"))
+
+
+def _ensure_dataset_csvs(
+    dataset_id: str,
+    target_dir: Path,
+    kagglehub_module,
+    force_download: bool = False,
+) -> list[Path]:
+    """Reuse local CSVs when available, otherwise download from Kaggle."""
+    existing_files = _existing_csvs(target_dir)
+    if existing_files and not force_download:
+        return existing_files
+    return _download_dataset_csvs(dataset_id, target_dir, kagglehub_module)
+
+
+def _pick_bank_marketing_csv(csv_files: list[Path]) -> Path:
+    """Pick the most likely Bank Marketing CSV from a list of files."""
+    for csv_file in csv_files:
+        name = csv_file.stem.lower()
+        if "bank" in name and "marketing" in name:
+            return csv_file
+    for csv_file in csv_files:
+        if "bank" in csv_file.stem.lower():
+            return csv_file
+    return csv_files[0]
 
 
 def exercise_1_2():
@@ -681,6 +768,142 @@ docker image rm python-docker
     print("Run `python app.py` or build the Docker image inside exercise_1_7.")
 
 
+def exercise_2_1():
+    """Run the full Kaggle + MySQL workflow for exercise 2.1."""
+    exercise_dir = Path("exercise_2_1")
+    compose_path = exercise_dir / "compose.yaml"
+    dataset_dir = exercise_dir / "datasets"
+    living_wage_dir = dataset_dir / "living_wage_50_states"
+    bank_marketing_dir = dataset_dir / "bank_marketing"
+    dataset_dir.mkdir(parents=True, exist_ok=True)
+
+    if compose_path.is_file():
+        print(f"[Exercise 2.1] using compose file: {compose_path}")
+        print("[Exercise 2.1] start services with: docker compose -f exercise_2_1/compose.yaml up -d")
+    else:
+        print(f"[Exercise 2.1] warning: compose file not found at {compose_path}")
+
+    try:
+        import kagglehub
+    except ImportError:
+        print("[Exercise 2.1] kagglehub is not installed.")
+        print("Install it with: pip install kagglehub")
+        return
+
+    force_download = os.getenv("FORCE_KAGGLE_DOWNLOAD", "0").strip().lower() in {"1", "true", "yes", "y"}
+
+    living_wage_id = "brandonconrady/living-wage-50-states"
+    print(f"[Exercise 2.1] downloading dataset: {living_wage_id}")
+    try:
+        living_wage_csvs = _ensure_dataset_csvs(
+            living_wage_id,
+            living_wage_dir,
+            kagglehub,
+            force_download=force_download,
+        )
+        print(f"[Exercise 2.1] {len(living_wage_csvs)} CSV file(s) ready in {living_wage_dir}")
+    except Exception as exc:
+        living_wage_csvs = []
+        print(f"[Exercise 2.1] living wage download failed: {exc}")
+        print("Make sure your Kaggle credentials are configured correctly.")
+
+    bank_dataset_candidates = [
+        "fedesoriano/bank-marketing",
+        "janiobachmann/bank-marketing-dataset",
+        "rouseguy/bankbalanced",
+    ]
+    custom_bank_dataset = os.getenv("BANK_MARKETING_DATASET", "").strip()
+    if custom_bank_dataset:
+        print(f"[Exercise 2.1] custom Bank Marketing dataset from env: {custom_bank_dataset}")
+        bank_dataset_candidates.insert(0, custom_bank_dataset)
+
+    bank_csvs = _existing_csvs(bank_marketing_dir) if not force_download else []
+    used_bank_dataset = "local cache" if bank_csvs else None
+    if not bank_csvs:
+        for dataset_id in bank_dataset_candidates:
+            print(f"[Exercise 2.1] trying Bank Marketing dataset: {dataset_id}")
+            try:
+                bank_csvs = _download_dataset_csvs(dataset_id, bank_marketing_dir, kagglehub)
+                used_bank_dataset = dataset_id
+                break
+            except Exception as exc:
+                print(f"[Exercise 2.1] failed for {dataset_id}: {exc}")
+
+    if not bank_csvs:
+        print("[Exercise 2.1] unable to download a Bank Marketing dataset.")
+        print("Set BANK_MARKETING_DATASET with a valid Kaggle dataset ID and run again.")
+        return
+
+    print(f"[Exercise 2.1] using Bank Marketing dataset: {used_bank_dataset}")
+    bank_csv_path = _pick_bank_marketing_csv(bank_csvs)
+    bank_df, sep_used = _read_csv_with_auto_separator(bank_csv_path)
+    print(
+        f"[Exercise 2.1] loaded {bank_csv_path.name} ({len(bank_df)} rows x {len(bank_df.columns)} columns, sep='{sep_used}')"
+    )
+
+    converted_df, converted_map = _convert_text_binary_columns(bank_df)
+    if converted_map:
+        print("[Exercise 2.1] converted binary text columns:")
+        for col, mapping in converted_map.items():
+            print(f"  - {col}: {mapping}")
+    else:
+        print("[Exercise 2.1] no text binary columns converted.")
+
+    processed_csv = bank_marketing_dir / "bank_marketing_processed.csv"
+    converted_df.to_csv(processed_csv, index=False)
+    print(f"[Exercise 2.1] saved processed CSV: {processed_csv}")
+
+    try:
+        from sqlalchemy import create_engine, text
+    except ImportError:
+        print("[Exercise 2.1] SQLAlchemy is not installed.")
+        print("Install with: pip install sqlalchemy mysql-connector-python")
+        return
+
+    db_user = os.getenv("MYSQL_USER", "root").strip() or "root"
+    db_password = os.getenv("MYSQL_PASSWORD", "pass")
+    db_host = os.getenv("MYSQL_HOST", "localhost").strip() or "localhost"
+    db_port = int(os.getenv("MYSQL_PORT", "3306").strip() or "3306")
+    db_name = os.getenv("MYSQL_DATABASE", "test").strip() or "test"
+
+    print(
+        f"[Exercise 2.1] MySQL target: host={db_host} port={db_port} db={db_name} user={db_user}"
+    )
+
+    server_url = f"mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}"
+    db_url = f"{server_url}/{db_name}"
+    try:
+        server_engine = create_engine(server_url, echo=False)
+        with server_engine.connect() as conn:
+            conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{db_name}`"))
+            conn.commit()
+        server_engine.dispose()
+
+        engine = create_engine(db_url, echo=False)
+        converted_df.to_sql(name="bankmarketing", con=engine, if_exists="replace", index=False)
+        preview = pd.read_sql("SELECT * FROM bankmarketing LIMIT 5", engine)
+        print("\n[Exercise 2.1] MySQL table 'bankmarketing' preview:")
+        print(preview.to_string(index=False))
+
+        converted_df.to_sql(name="bankmarketing_copy", con=engine, if_exists="replace", index=False)
+        print("[Exercise 2.1] created table copy: bankmarketing_copy")
+
+        if living_wage_csvs:
+            living_wage_path = living_wage_csvs[0]
+            living_wage_df, _ = _read_csv_with_auto_separator(living_wage_path)
+            living_wage_df.to_sql(name="livingwage50states", con=engine, if_exists="replace", index=False)
+            living_preview = pd.read_sql("SELECT * FROM livingwage50states LIMIT 5", engine)
+            print("\n[Exercise 2.1] MySQL table 'livingwage50states' preview:")
+            print(living_preview.to_string(index=False))
+            living_wage_df.to_sql(name="livingwage50states_copy", con=engine, if_exists="replace", index=False)
+            print("[Exercise 2.1] created table copy: livingwage50states_copy")
+
+        engine.dispose()
+    except Exception as exc:
+        print(f"[Exercise 2.1] MySQL upload failed: {exc}")
+        print("Verify docker services are running and phpMyAdmin can access db/root/pass.")
+
+
 def _discover_exercises():
     """Discover exercise functions named like exercise_<chapter>_<number>."""
     discovered = {}
@@ -726,13 +949,13 @@ def _prompt_exercise_selection(available_ids):
     """Prompt the user for exercise selection via terminal."""
     ids_display = ", ".join(available_ids)
     prompt = (
-        f"\nQuali esercizi vuoi eseguire? ({ids_display} oppure 'tutti')\n"
-        "Puoi inserire piu valori separati da spazio o virgola: "
+        f"\nWhich exercises do you want to run? ({ids_display} or 'all')\n"
+        "You can enter multiple values separated by spaces or commas: "
     )
     while True:
         raw = input(prompt).strip()
         if not raw:
-            print("Inserisci almeno un esercizio oppure 'tutti'.")
+            print("Enter at least one exercise or 'all'.")
             continue
         tokens = raw.replace(",", " ").split()
         try:
@@ -756,7 +979,7 @@ if __name__ == "__main__":
         help=(
             "Exercise ID to run (examples: 1_5, 1.5 or 5). "
             "You can pass multiple IDs, e.g. --exercise 1_3 1_5. "
-            "Use 'tutti' or 'all' to run all exercises. "
+            "Use 'all' to run all exercises. "
             "If omitted, an interactive prompt is shown."
         ),
     )
@@ -773,3 +996,4 @@ if __name__ == "__main__":
     for ex_id in selected_ids:
         print(f"\n[Runner] running exercise {ex_id}")
         exercise_map[ex_id]()
+
