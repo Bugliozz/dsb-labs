@@ -10,6 +10,7 @@ Contains functions corresponding to the class assignments:
 * `exercise_1_7()` prepares a Flask + Docker lab scaffold
 * `exercise_2_1()` runs the Kaggle + MySQL lab workflow
 * `exercise_2_2()` guides the Metabase + MySQL exploration workflow
+* `exercise_2_3()` guides the Neo4j Browser tutorials + Python Cypher workflow
 
 The functions are called from the standard ``if __name__ == '__main__'``
 guard at the bottom; importing this module does not execute any plotting by
@@ -957,6 +958,82 @@ def exercise_2_2():
     print("3. Use host=db, port=3306, db=test, username=root, password=pass.")
     print("4. Save and wait for sync.")
     print("5. Explore data from 'Browse data' and build simple questions/charts.")
+
+
+def exercise_2_3():
+    """Guide and validate the Neo4j + Python workflow for exercise 2.3."""
+    print("[Exercise 2.3] Neo4j Browser URL: http://localhost:7474")
+    print("[Exercise 2.3] credentials:")
+    print("  username=neo4j")
+    print("  password=test12345")
+    print("\n[Exercise 2.3] complete these Browser tutorials:")
+    print("1. Getting started with Neo4j Browser")
+    print("2. Try Neo4j with live data")
+    print("3. Cypher basics")
+
+    compose_path = Path("exercise_2_1/compose.yaml")
+    if compose_path.is_file():
+        print("\n[Exercise 2.3] if services are not running, start them with:")
+        print("  docker compose -f exercise_2_1/compose.yaml up -d")
+
+    try:
+        from neo4j import GraphDatabase
+    except ImportError:
+        print("\n[Exercise 2.3] neo4j driver not found.")
+        print("Install with: pip install neo4j")
+        return
+
+    uri = os.getenv("NEO4J_URI", "neo4j://localhost:7687").strip() or "neo4j://localhost:7687"
+    user = os.getenv("NEO4J_USER", "neo4j").strip() or "neo4j"
+    password = os.getenv("NEO4J_PASSWORD", "test12345")
+
+    print(f"\n[Exercise 2.3] testing Python driver connection: uri={uri} user={user}")
+
+    try:
+        with GraphDatabase.driver(uri, auth=(user, password)) as driver:
+            driver.verify_connectivity()
+            print("[Exercise 2.3] connectivity check: OK")
+
+            queries = [
+                (
+                    "People sample",
+                    "MATCH (people:Person) RETURN people.name AS name LIMIT 10",
+                ),
+                (
+                    "Top movies by actor count",
+                    "MATCH (m:Movie)<-[:ACTED_IN]-(p:Person) "
+                    "RETURN m.title AS movie, count(p) AS actors "
+                    "ORDER BY actors DESC, movie ASC LIMIT 10",
+                ),
+                (
+                    "People with sample movies",
+                    "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
+                    "RETURN p.name AS person, collect(m.title)[0..3] AS movies "
+                    "LIMIT 5",
+                ),
+            ]
+
+            total_rows = 0
+            for label, cypher in queries:
+                records, _, _ = driver.execute_query(cypher)
+                rows = [dict(record) for record in records]
+                print(f"\n[Exercise 2.3] {label}: {len(rows)} row(s)")
+                if rows:
+                    print(pd.DataFrame(rows).to_string(index=False))
+                    total_rows += len(rows)
+                else:
+                    print("No rows returned.")
+    except Exception as exc:
+        print(f"[Exercise 2.3] Neo4j connection/query failed: {exc}")
+        print("Verify neo4j service is up and credentials are correct.")
+        return
+
+    if total_rows == 0:
+        print(
+            "\n[Exercise 2.3] no data matched the sample queries."
+            " In Neo4j Browser, load a sample graph and rerun."
+        )
+        print("Tip: run ':play movie graph' in Browser to load demo data.")
 
 
 def _discover_exercises():

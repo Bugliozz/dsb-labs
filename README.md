@@ -65,6 +65,7 @@ python main.py --exercise all
 - `exercise_1_7`: Flask + Docker lab scaffold.
 - `exercise_2_1`: Kaggle ingestion + MySQL upload workflow.
 - `exercise_2_2`: Metabase login + MySQL connection and data exploration workflow.
+- `exercise_2_3`: Neo4j Browser tutorials + Python Cypher query replication workflow.
 
 ## Project Structure
 
@@ -80,6 +81,7 @@ exercise1/
   exercise_1_7/
   exercise_2_1/
   exercise_2_2/
+  exercise_2_3/
 ```
 
 ## Data Notes
@@ -123,4 +125,24 @@ Optional helper command (validates MySQL from host and prints the checklist):
 
 ```bash
 python main.py --exercise 2_2
+```
+
+## Exercise 2.3 (Neo4j + Python)
+
+Open Neo4j Browser:
+
+- URL: `http://localhost:7474`
+- Username: `neo4j`
+- Password: `test12345`
+
+Complete tutorials from the Browser home:
+
+1. `Getting started with Neo4j Browser`
+2. `Try Neo4j with live data`
+3. `Cypher basics`
+
+Then replicate some queries from Python:
+
+```bash
+python main.py --exercise 2_3
 ```
