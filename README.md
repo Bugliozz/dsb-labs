@@ -92,6 +92,53 @@ exercise1/
 - Kaggle-based steps require valid Kaggle credentials configured in your environment.
 - Generated images are included where useful to document outputs.
 
+## Exercise 1 Guide (Step by Step)
+
+### Goal
+
+Exercise 1 is an introductory path:
+
+1. first exercises focus on plotting and visual exploration;
+2. last exercises introduce Docker-based application/container workflows.
+
+### Intro part: charts and EDA
+
+These exercises are mainly for learning how to create and read plots:
+
+- `1_2`: multi-panel matplotlib layout;
+- `1_3`: combined Seaborn charts;
+- `1_4`: exploratory analysis on a medical dataset;
+- `1_5`: correlation analysis and visual diagnostics.
+
+Run examples:
+
+```bash
+python main.py --exercise 1_2
+python main.py --exercise 1_3
+python main.py --exercise 1_4
+python main.py --exercise 1_5
+```
+
+### Final part: Docker introduction
+
+These exercises shift focus from plotting to tooling and deployment basics:
+
+- `1_6`: DokuWiki with Docker Compose and persistent volumes;
+- `1_7`: minimal Flask app containerization with Dockerfile.
+
+Run examples:
+
+```bash
+python main.py --exercise 1_6
+python main.py --exercise 1_7
+```
+
+### Full Exercise 1 sequence
+
+```bash
+python main.py --exercise 1_2 1_3 1_4 1_5 1_6 1_7
+```
+
 ## Exercise 2 Guide (Step by Step)
 
 ### Goal
