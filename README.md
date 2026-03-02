@@ -3,7 +3,7 @@
 A curated collection of Python labs developed for the **Data Science for Business** course.
 The project combines data visualization, exploratory analysis, and Docker-based data tooling workflows.
 
-## Portfolio Highlights
+## Project Highlights
 
 - Clean CLI runner (`main.py`) to execute one or multiple exercises.
 - Reproducible visual analytics with `pandas`, `matplotlib`, and `seaborn`.
