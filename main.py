@@ -22,6 +22,7 @@ import inspect
 import argparse
 import os
 import shutil
+import json
 import urllib.request
 import urllib.error
 from base64 import b64encode
@@ -965,15 +966,12 @@ def exercise_2_2():
 
 
 def exercise_2_3():
-    """Guide and validate the Neo4j + Python workflow for exercise 2.3."""
+    """Load MySQL Bank Marketing data into Neo4j and run Cypher analyses."""
     print("[Exercise 2.3] Neo4j Browser URL: http://localhost:7474")
     print("[Exercise 2.3] credentials:")
     print("  username=neo4j")
     print("  password=test12345")
-    print("\n[Exercise 2.3] complete these Browser tutorials:")
-    print("1. Getting started with Neo4j Browser")
-    print("2. Try Neo4j with live data")
-    print("3. Cypher basics")
+    print("\n[Exercise 2.3] this run imports MySQL table 'bankmarketing' into Neo4j.")
 
     compose_path = Path("exercise_2_1/compose.yaml")
     if compose_path.is_file():
@@ -987,6 +985,89 @@ def exercise_2_3():
         print("Install with: pip install neo4j")
         return
 
+    try:
+        from sqlalchemy import create_engine, text
+    except ImportError:
+        print("\n[Exercise 2.3] SQLAlchemy not found.")
+        print("Install with: pip install sqlalchemy mysql-connector-python")
+        return
+
+    mysql_user = os.getenv("MYSQL_USER", "root").strip() or "root"
+    mysql_password = os.getenv("MYSQL_PASSWORD", "pass")
+    mysql_host = os.getenv("MYSQL_HOST", "localhost").strip() or "localhost"
+    mysql_port = int(os.getenv("MYSQL_PORT", "3306").strip() or "3306")
+    mysql_db = os.getenv("MYSQL_DATABASE", "test").strip() or "test"
+
+    raw_limit = os.getenv("NEO4J_IMPORT_LIMIT", "5000").strip()
+    try:
+        import_limit = max(1, int(raw_limit))
+    except ValueError:
+        import_limit = 5000
+
+    mysql_url = f"mysql+mysqlconnector://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_db}"
+    print(
+        f"[Exercise 2.3] reading MySQL source: host={mysql_host} port={mysql_port} db={mysql_db} table=bankmarketing"
+    )
+    print(f"[Exercise 2.3] import limit: {import_limit} rows (env NEO4J_IMPORT_LIMIT)")
+
+    try:
+        engine = create_engine(mysql_url, echo=False)
+        with engine.connect() as conn:
+            table_exists = conn.execute(text("SHOW TABLES LIKE 'bankmarketing'")).fetchone() is not None
+        if not table_exists:
+            print("[Exercise 2.3] table 'bankmarketing' not found in MySQL.")
+            print("Run first: python main.py --exercise 2_1")
+            engine.dispose()
+            return
+        bank_df = pd.read_sql(text("SELECT * FROM bankmarketing LIMIT :limit"), engine, params={"limit": import_limit})
+        engine.dispose()
+    except Exception as exc:
+        print(f"[Exercise 2.3] failed to read MySQL source: {exc}")
+        print("Verify MySQL is running and reachable from host.")
+        return
+
+    if bank_df.empty:
+        print("[Exercise 2.3] no rows found in MySQL table 'bankmarketing'.")
+        return
+
+    def _norm_scalar(value):
+        if pd.isna(value):
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
+    def _norm_label(value):
+        value = _norm_scalar(value)
+        if value is None:
+            return None
+        return str(value)
+
+    rows = []
+    for idx, row in bank_df.reset_index(drop=True).iterrows():
+        rows.append(
+            {
+                "customer_id": f"bm_{idx + 1}",
+                "age": None if pd.isna(row.get("age")) else int(row["age"]),
+                "balance": None if pd.isna(row.get("balance")) else float(row["balance"]),
+                "campaign": None if pd.isna(row.get("campaign")) else int(row["campaign"]),
+                "pdays": None if pd.isna(row.get("pdays")) else int(row["pdays"]),
+                "previous": None if pd.isna(row.get("previous")) else int(row["previous"]),
+                "duration": None if pd.isna(row.get("duration")) else int(row["duration"]),
+                "job": _norm_label(row.get("job")),
+                "marital": _norm_label(row.get("marital")),
+                "education": _norm_label(row.get("education")),
+                "contact": _norm_label(row.get("contact")),
+                "month": _norm_label(row.get("month")),
+                "housing": _norm_label(row.get("housing")),
+                "loan": _norm_label(row.get("loan")),
+                "default_flag": _norm_label(row.get("default")),
+                "poutcome": _norm_label(row.get("poutcome")),
+                "outcome": _norm_label(row.get("y")),
+            }
+        )
+
     uri = os.getenv("NEO4J_URI", "neo4j://localhost:7687").strip() or "neo4j://localhost:7687"
     user = os.getenv("NEO4J_USER", "neo4j").strip() or "neo4j"
     password = os.getenv("NEO4J_PASSWORD", "test12345")
@@ -998,22 +1079,84 @@ def exercise_2_3():
             driver.verify_connectivity()
             print("[Exercise 2.3] connectivity check: OK")
 
+            # Keep the imported graph deterministic between runs.
+            driver.execute_query("MATCH (c:BankCustomer) DETACH DELETE c")
+
+            import_query = """
+            UNWIND $rows AS row
+            MERGE (c:BankCustomer {id: row.customer_id})
+            SET c.age = row.age,
+                c.balance = row.balance,
+                c.campaign = row.campaign,
+                c.pdays = row.pdays,
+                c.previous = row.previous,
+                c.duration = row.duration
+
+            FOREACH (_ IN CASE WHEN row.job IS NULL THEN [] ELSE [1] END |
+              MERGE (j:Job {name: row.job})
+              MERGE (c)-[:HAS_JOB]->(j)
+            )
+            FOREACH (_ IN CASE WHEN row.marital IS NULL THEN [] ELSE [1] END |
+              MERGE (m:MaritalStatus {name: row.marital})
+              MERGE (c)-[:HAS_MARITAL_STATUS]->(m)
+            )
+            FOREACH (_ IN CASE WHEN row.education IS NULL THEN [] ELSE [1] END |
+              MERGE (e:EducationLevel {name: row.education})
+              MERGE (c)-[:HAS_EDUCATION]->(e)
+            )
+            FOREACH (_ IN CASE WHEN row.contact IS NULL THEN [] ELSE [1] END |
+              MERGE (ct:ContactChannel {name: row.contact})
+              MERGE (c)-[:CONTACTED_BY]->(ct)
+            )
+            FOREACH (_ IN CASE WHEN row.month IS NULL THEN [] ELSE [1] END |
+              MERGE (mo:CampaignMonth {name: row.month})
+              MERGE (c)-[:CONTACTED_IN_MONTH]->(mo)
+            )
+            FOREACH (_ IN CASE WHEN row.housing IS NULL THEN [] ELSE [1] END |
+              MERGE (h:HousingLoanFlag {name: row.housing})
+              MERGE (c)-[:HAS_HOUSING_LOAN]->(h)
+            )
+            FOREACH (_ IN CASE WHEN row.loan IS NULL THEN [] ELSE [1] END |
+              MERGE (l:PersonalLoanFlag {name: row.loan})
+              MERGE (c)-[:HAS_PERSONAL_LOAN]->(l)
+            )
+            FOREACH (_ IN CASE WHEN row.default_flag IS NULL THEN [] ELSE [1] END |
+              MERGE (d:DefaultFlag {name: row.default_flag})
+              MERGE (c)-[:IN_DEFAULT]->(d)
+            )
+            FOREACH (_ IN CASE WHEN row.poutcome IS NULL THEN [] ELSE [1] END |
+              MERGE (po:PreviousOutcome {name: row.poutcome})
+              MERGE (c)-[:HAS_PREVIOUS_OUTCOME]->(po)
+            )
+            FOREACH (_ IN CASE WHEN row.outcome IS NULL THEN [] ELSE [1] END |
+              MERGE (o:CampaignOutcome {name: row.outcome})
+              MERGE (c)-[:HAS_OUTCOME]->(o)
+            )
+            """
+            driver.execute_query(import_query, rows=rows)
+            print(f"[Exercise 2.3] imported {len(rows)} customer rows from MySQL into Neo4j")
+
             queries = [
                 (
-                    "People sample",
-                    "MATCH (people:Person) RETURN people.name AS name LIMIT 10",
+                    "Outcome distribution",
+                    "MATCH (c:BankCustomer)-[:HAS_OUTCOME]->(o:CampaignOutcome) "
+                    "RETURN o.name AS outcome, count(*) AS customers "
+                    "ORDER BY customers DESC, outcome ASC",
                 ),
                 (
-                    "Top movies by actor count",
-                    "MATCH (m:Movie)<-[:ACTED_IN]-(p:Person) "
-                    "RETURN m.title AS movie, count(p) AS actors "
-                    "ORDER BY actors DESC, movie ASC LIMIT 10",
+                    "Top jobs by positive rate",
+                    "MATCH (c:BankCustomer)-[:HAS_JOB]->(j:Job) "
+                    "MATCH (c)-[:HAS_OUTCOME]->(o:CampaignOutcome) "
+                    "WITH j.name AS job, count(*) AS total, "
+                    "sum(CASE WHEN toLower(toString(o.name)) IN ['1','yes','true'] THEN 1 ELSE 0 END) AS positives "
+                    "RETURN job, total, round(100.0 * positives / total, 2) AS positive_rate_pct "
+                    "ORDER BY positive_rate_pct DESC, total DESC LIMIT 10",
                 ),
                 (
-                    "People with sample movies",
-                    "MATCH (p:Person)-[:ACTED_IN]->(m:Movie) "
-                    "RETURN p.name AS person, collect(m.title)[0..3] AS movies "
-                    "LIMIT 5",
+                    "Monthly contact volume",
+                    "MATCH (c:BankCustomer)-[:CONTACTED_IN_MONTH]->(m:CampaignMonth) "
+                    "RETURN m.name AS month, count(*) AS contacts "
+                    "ORDER BY contacts DESC LIMIT 12",
                 ),
             ]
 
@@ -1033,25 +1176,29 @@ def exercise_2_3():
         return
 
     if total_rows == 0:
-        print(
-            "\n[Exercise 2.3] no data matched the sample queries."
-            " In Neo4j Browser, load a sample graph and rerun."
-        )
-        print("Tip: run ':play movie graph' in Browser to load demo data.")
+        print("\n[Exercise 2.3] no rows returned by analytical queries.")
+        print("Check that the MySQL source table contains data and rerun 2_1 if needed.")
 
 
 def exercise_2_4():
-    """Guide and validate the OpenSearch Dashboards workflow for exercise 2.4."""
+    """Import MySQL Bank Marketing data into OpenSearch and guide Dashboards usage."""
     dashboards_url = "http://localhost:5601"
     opensearch_url = "http://localhost:9200"
     username = os.getenv("OPENSEARCH_USER", "admin").strip() or "admin"
     password = os.getenv("OPENSEARCH_PASSWORD", "@StrongP4ssword!")
+    index_name = os.getenv("OPENSEARCH_INDEX", "bankmarketing").strip() or "bankmarketing"
+    raw_limit = os.getenv("OPENSEARCH_IMPORT_LIMIT", "5000").strip()
+    try:
+        import_limit = max(1, int(raw_limit))
+    except ValueError:
+        import_limit = 5000
 
     print(f"[Exercise 2.4] OpenSearch Dashboards URL: {dashboards_url}")
     print("[Exercise 2.4] credentials:")
     print(f"  user={username}")
     print(f"  password={password}")
-    print("\n[Exercise 2.4] optional task: explore the web interface and sample data.")
+    print("\n[Exercise 2.4] this run imports MySQL table 'bankmarketing' into OpenSearch.")
+    print(f"[Exercise 2.4] target index: {index_name} (limit={import_limit} rows)")
 
     compose_path = Path("exercise_2_4/compose.yaml")
     if compose_path.is_file():
@@ -1068,26 +1215,145 @@ def exercise_2_4():
         print("Start the stack, then open http://localhost:5601 in your browser.")
         return
 
-    auth_raw = f"{username}:{password}".encode("utf-8")
-    auth_header = b64encode(auth_raw).decode("ascii")
-    request = urllib.request.Request(opensearch_url)
-    request.add_header("Authorization", f"Basic {auth_header}")
+    try:
+        from sqlalchemy import create_engine, text
+    except ImportError:
+        print("\n[Exercise 2.4] SQLAlchemy not found.")
+        print("Install with: pip install sqlalchemy mysql-connector-python")
+        return
+
+    mysql_user = os.getenv("MYSQL_USER", "root").strip() or "root"
+    mysql_password = os.getenv("MYSQL_PASSWORD", "pass")
+    mysql_host = os.getenv("MYSQL_HOST", "localhost").strip() or "localhost"
+    mysql_port = int(os.getenv("MYSQL_PORT", "3306").strip() or "3306")
+    mysql_db = os.getenv("MYSQL_DATABASE", "test").strip() or "test"
+    mysql_url = f"mysql+mysqlconnector://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_db}"
+
+    print(
+        f"[Exercise 2.4] reading MySQL source: host={mysql_host} port={mysql_port} db={mysql_db} table=bankmarketing"
+    )
+    try:
+        engine = create_engine(mysql_url, echo=False)
+        with engine.connect() as conn:
+            table_exists = conn.execute(text("SHOW TABLES LIKE 'bankmarketing'")).fetchone() is not None
+        if not table_exists:
+            print("[Exercise 2.4] table 'bankmarketing' not found in MySQL.")
+            print("Run first: python main.py --exercise 2_1")
+            engine.dispose()
+            return
+        bank_df = pd.read_sql(text("SELECT * FROM bankmarketing LIMIT :limit"), engine, params={"limit": import_limit})
+        engine.dispose()
+    except Exception as exc:
+        print(f"[Exercise 2.4] failed to read MySQL source: {exc}")
+        return
+
+    if bank_df.empty:
+        print("[Exercise 2.4] no rows found in MySQL table 'bankmarketing'.")
+        return
+
+    def _to_json_serializable(value):
+        if pd.isna(value):
+            return None
+        if isinstance(value, (np.integer,)):
+            return int(value)
+        if isinstance(value, (np.floating,)):
+            return float(value)
+        if isinstance(value, (np.bool_,)):
+            return bool(value)
+        return value
+
+    def _opensearch_request(path: str, method: str = "GET", payload=None, content_type: str = "application/json"):
+        url = f"{opensearch_url.rstrip('/')}/{path.lstrip('/')}"
+        data = None
+        if payload is not None:
+            if isinstance(payload, bytes):
+                data = payload
+            elif isinstance(payload, str):
+                data = payload.encode("utf-8")
+            else:
+                data = json.dumps(payload).encode("utf-8")
+
+        request = urllib.request.Request(url, method=method, data=data)
+        request.add_header("Content-Type", content_type)
+        if username:
+            auth_raw = f"{username}:{password}".encode("utf-8")
+            auth_header = b64encode(auth_raw).decode("ascii")
+            request.add_header("Authorization", f"Basic {auth_header}")
+
+        with urllib.request.urlopen(request, timeout=15) as resp:
+            body = resp.read().decode("utf-8") if resp.readable() else ""
+            return resp.status, body
 
     try:
-        with urllib.request.urlopen(request, timeout=5) as resp:
-            print(f"[Exercise 2.4] OpenSearch API reachable: HTTP {resp.status}")
+        status, _ = _opensearch_request("/", "GET")
+        print(f"[Exercise 2.4] OpenSearch API reachable: HTTP {status}")
     except urllib.error.HTTPError as exc:
         print(f"[Exercise 2.4] OpenSearch API check returned HTTP {exc.code}")
-        print("If security is disabled in compose, this can still be acceptable.")
+        print("Check OpenSearch credentials/security settings in compose.")
+        return
     except Exception as exc:
         print(f"[Exercise 2.4] OpenSearch API check failed: {exc}")
         print("Verify the OpenSearch container is running and port 9200 is exposed.")
+        return
+
+    try:
+        # Reset index to keep imports deterministic for repeated runs.
+        try:
+            _opensearch_request(index_name, "DELETE")
+        except urllib.error.HTTPError:
+            pass
+
+        _opensearch_request(index_name, "PUT", payload={})
+
+        lines = []
+        for i, rec in enumerate(bank_df.to_dict(orient="records"), start=1):
+            doc = {k: _to_json_serializable(v) for k, v in rec.items()}
+            doc["source"] = "mysql_bankmarketing"
+            lines.append(json.dumps({"index": {"_index": index_name, "_id": f"bm_{i}"}}))
+            lines.append(json.dumps(doc))
+        bulk_payload = "\n".join(lines) + "\n"
+
+        _, bulk_body = _opensearch_request(
+            "_bulk?refresh=true",
+            "POST",
+            payload=bulk_payload,
+            content_type="application/x-ndjson",
+        )
+        bulk_json = json.loads(bulk_body) if bulk_body else {}
+        if bulk_json.get("errors"):
+            print("[Exercise 2.4] bulk import completed with errors. Check OpenSearch logs.")
+        else:
+            print(f"[Exercise 2.4] imported {len(bank_df)} rows into OpenSearch index '{index_name}'")
+
+        _, count_body = _opensearch_request(f"{index_name}/_count", "GET")
+        count_json = json.loads(count_body) if count_body else {}
+        print(f"[Exercise 2.4] indexed document count: {count_json.get('count', 'unknown')}")
+
+        _, agg_body = _opensearch_request(
+            f"{index_name}/_search",
+            "POST",
+            payload={
+                "size": 0,
+                "aggs": {"by_outcome": {"terms": {"field": "y", "size": 10}}},
+            },
+        )
+        agg_json = json.loads(agg_body) if agg_body else {}
+        buckets = agg_json.get("aggregations", {}).get("by_outcome", {}).get("buckets", [])
+        if buckets:
+            print("[Exercise 2.4] outcome distribution preview:")
+            for bucket in buckets:
+                print(f"  - y={bucket.get('key')}: {bucket.get('doc_count')}")
+    except Exception as exc:
+        print(f"[Exercise 2.4] import/search pipeline failed: {exc}")
+        print("Verify OpenSearch version compatibility and security options.")
+        return
 
     print("\n[Exercise 2.4] next steps in Dashboards:")
     print("1. Open http://localhost:5601.")
     print("2. Log in with admin / @StrongP4ssword! (if prompted).")
-    print("3. Add and explore available sample data.")
-    print("4. Build simple visualizations and dashboards.")
+    print(f"3. Create a Data View for index: {index_name}")
+    print("4. Open Discover and inspect imported documents.")
+    print("5. Build visualizations/dashboards on field y, job, marital, month.")
 
 
 def _discover_exercises():

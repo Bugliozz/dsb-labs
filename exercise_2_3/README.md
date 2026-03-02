@@ -1,6 +1,6 @@
 # Exercise 2.3 - Neo4j + Python
 
-This exercise focuses on Neo4j Browser tutorials and reproducing sample Cypher queries from Python.
+This exercise imports the MySQL `bankmarketing` table into Neo4j and runs Cypher analyses from Python.
 
 ## Prerequisites
 
@@ -16,15 +16,15 @@ docker compose -f ../exercise_2_1/compose.yaml up -d
 - Username: `neo4j`
 - Password: `test12345`
 
-## Browser tasks
+## Source data
 
-Complete these tutorials from the homepage:
+Make sure Exercise 2.1 has loaded MySQL tables:
 
-1. `Getting started with Neo4j Browser`
-2. `Try Neo4j with live data`
-3. `Cypher basics`
+```bash
+python main.py --exercise 2_1
+```
 
-## Python replication
+## MySQL -> Neo4j import and query
 
 From project root:
 
@@ -32,9 +32,15 @@ From project root:
 python main.py --exercise 2_3
 ```
 
-The command checks connectivity and runs sample Cypher queries such as:
+What it does:
 
-- `MATCH (people:Person) RETURN people.name LIMIT 10`
-- Movie/actor aggregation examples.
+1. Reads `test.bankmarketing` from MySQL.
+2. Creates graph entities in Neo4j (`BankCustomer`, `Job`, `CampaignOutcome`, ...).
+3. Executes analysis queries (outcome distribution, top jobs by positive rate, monthly contacts).
 
-If no rows are returned, load demo data in Browser first (example: `:play movie graph`).
+Optional row limit (default `5000`):
+
+```bash
+$env:NEO4J_IMPORT_LIMIT=10000
+python main.py --exercise 2_3
+```

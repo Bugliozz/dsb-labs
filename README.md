@@ -65,8 +65,8 @@ python main.py --exercise all
 - `exercise_1_7`: Flask + Docker lab scaffold.
 - `exercise_2_1`: Kaggle ingestion + MySQL upload workflow.
 - `exercise_2_2`: Metabase login + MySQL connection and data exploration workflow.
-- `exercise_2_3`: Neo4j Browser tutorials + Python Cypher query replication workflow.
-- `exercise_2_4`: OpenSearch Dashboards optional exploration workflow.
+- `exercise_2_3`: MySQL -> Neo4j graph import and Cypher analysis workflow.
+- `exercise_2_4`: MySQL -> OpenSearch import and Dashboards visualization workflow.
 
 ## Project Structure
 
@@ -92,81 +92,162 @@ exercise1/
 - Kaggle-based steps require valid Kaggle credentials configured in your environment.
 - Generated images are included where useful to document outputs.
 
-## Exercise 2.1 Services
+## Exercise 2 Guide (Step by Step)
 
-Start the service stack:
+### Goal
+
+Exercise 2 is an end-to-end mini data platform workflow:
+
+1. ingest data into MySQL (`2_1`);
+2. explore tabular analytics in Metabase (`2_2`);
+3. reshape the same data as graph data in Neo4j (`2_3`);
+4. index the same data for search/BI in OpenSearch (`2_4`, optional).
+
+### 0. Prerequisites
+
+From project root:
 
 ```bash
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Kaggle credentials are required for `2_1`:
+
+- `C:\Users\<you>\.kaggle\kaggle.json`, or
+- env vars `KAGGLE_USERNAME` and `KAGGLE_KEY`.
+
+### 1. Start base services (MySQL, phpMyAdmin, Metabase, Neo4j)
+
+```bash
+docker network create network1
 docker compose -f exercise_2_1/compose.yaml up -d
 ```
 
-Available interfaces:
+Service URLs:
 
 - phpMyAdmin: `http://localhost:8080`
 - Metabase: `http://localhost:3000`
-- Neo4j: `http://localhost:7474`
+- Neo4j Browser: `http://localhost:7474`
 
-Then run:
+### 2. Run Exercise 2.1 (Kaggle -> MySQL)
+
+What it does:
+
+- downloads datasets from Kaggle;
+- processes `bankmarketing`;
+- writes tables into MySQL database `test`.
+
+Run:
 
 ```bash
 python main.py --exercise 2_1
 ```
 
-## Exercise 2.2 (Metabase + MySQL)
+Expected MySQL tables:
 
-Complete the Metabase onboarding and connect the MySQL service using:
+- `bankmarketing`
+- `livingwage50states` (if dataset available)
 
-- Metabase URL: `http://localhost:3000`
+### 3. Run Exercise 2.2 (MySQL -> Metabase)
+
+What it does:
+
+- validates MySQL reachability from host;
+- prints setup checklist for Metabase.
+
+Run:
+
+```bash
+python main.py --exercise 2_2
+```
+
+Metabase connection fields:
+
 - Host: `db`
 - Port: `3306`
 - Database: `test`
 - Username: `root`
 - Password: `pass`
 
-Optional helper command (validates MySQL from host and prints the checklist):
+Common issue: `RSA public key is not available`
 
-```bash
-python main.py --exercise 2_2
-```
+- In Metabase advanced connection options use JDBC params:
+  `allowPublicKeyRetrieval=true&useSSL=false`
+- Or create a dedicated MySQL user with `mysql_native_password`.
 
-## Exercise 2.3 (Neo4j + Python)
+### 4. Run Exercise 2.3 (MySQL -> Neo4j)
 
-Open Neo4j Browser:
+What it does:
 
-- URL: `http://localhost:7474`
-- Username: `neo4j`
-- Password: `test12345`
+- reads `test.bankmarketing` from MySQL;
+- imports it into Neo4j graph entities (`BankCustomer`, `Job`, `CampaignOutcome`, ...);
+- runs Cypher analyses (outcomes, jobs, month-level contacts).
 
-Complete tutorials from the Browser home:
-
-1. `Getting started with Neo4j Browser`
-2. `Try Neo4j with live data`
-3. `Cypher basics`
-
-Then replicate some queries from Python:
+Run:
 
 ```bash
 python main.py --exercise 2_3
 ```
 
-## Exercise 2.4 (Optional, OpenSearch)
+Neo4j credentials:
 
-Open OpenSearch Dashboards:
+- URL: `http://localhost:7474` (browser)
+- Bolt URI used by Python: `neo4j://localhost:7687`
+- Username: `neo4j`
+- Password: `test12345`
 
-- URL: `http://localhost:5601`
-- User: `admin`
-- Password: `@StrongP4ssword!`
+Optional tuning:
 
-Start the optional OpenSearch stack:
+- `NEO4J_IMPORT_LIMIT` (default `5000`)
+
+### 5. Run Exercise 2.4 Optional (MySQL -> OpenSearch)
+
+Start OpenSearch stack:
 
 ```bash
 docker compose -f exercise_2_4/compose.yaml up -d
 ```
 
-Then explore the available sample data from the web interface.
+What it does:
 
-Optional helper command:
+- reads `test.bankmarketing` from MySQL;
+- bulk indexes documents into OpenSearch (`bankmarketing` by default);
+- prints basic aggregation preview;
+- guides visualization in Dashboards.
+
+Run:
 
 ```bash
 python main.py --exercise 2_4
+```
+
+OpenSearch credentials:
+
+- Dashboards URL: `http://localhost:5601`
+- User: `admin`
+- Password: `@StrongP4ssword!`
+
+Optional tuning:
+
+- `OPENSEARCH_INDEX` (default `bankmarketing`)
+- `OPENSEARCH_IMPORT_LIMIT` (default `5000`)
+
+### 6. Full run sequence
+
+```bash
+python main.py --exercise 2_1
+python main.py --exercise 2_2
+python main.py --exercise 2_3
+docker compose -f exercise_2_4/compose.yaml up -d
+python main.py --exercise 2_4
+```
+
+### 7. Shutdown
+
+```bash
+docker compose -f exercise_2_1/compose.yaml down
+docker compose -f exercise_2_4/compose.yaml down
 ```
