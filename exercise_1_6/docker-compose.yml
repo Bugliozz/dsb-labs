@@ -1,0 +1,10 @@
+services:
+  dokuwiki:
+    image: dokuwiki/dokuwiki:stable
+    container_name: dokuwiki-lab
+    ports:
+      - "8080:8080"
+    user: "1000:1000"
+    volumes:
+      - ./dokuwiki_data:/storage
+    restart: unless-stopped
