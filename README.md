@@ -64,6 +64,7 @@ python main.py --exercise all
 - `exercise_1_6`: Docker + DokuWiki lab scaffold.
 - `exercise_1_7`: Flask + Docker lab scaffold.
 - `exercise_2_1`: Kaggle ingestion + MySQL upload workflow.
+- `exercise_2_2`: Metabase login + MySQL connection and data exploration workflow.
 
 ## Project Structure
 
@@ -78,6 +79,7 @@ exercise1/
   exercise_1_6/
   exercise_1_7/
   exercise_2_1/
+  exercise_2_2/
 ```
 
 ## Data Notes
@@ -104,4 +106,21 @@ Then run:
 
 ```bash
 python main.py --exercise 2_1
+```
+
+## Exercise 2.2 (Metabase + MySQL)
+
+Complete the Metabase onboarding and connect the MySQL service using:
+
+- Metabase URL: `http://localhost:3000`
+- Host: `db`
+- Port: `3306`
+- Database: `test`
+- Username: `root`
+- Password: `pass`
+
+Optional helper command (validates MySQL from host and prints the checklist):
+
+```bash
+python main.py --exercise 2_2
 ```

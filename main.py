@@ -9,6 +9,7 @@ Contains functions corresponding to the class assignments:
 * `exercise_1_6()` prepares a Docker/DokuWiki lab scaffold
 * `exercise_1_7()` prepares a Flask + Docker lab scaffold
 * `exercise_2_1()` runs the Kaggle + MySQL lab workflow
+* `exercise_2_2()` guides the Metabase + MySQL exploration workflow
 
 The functions are called from the standard ``if __name__ == '__main__'``
 guard at the bottom; importing this module does not execute any plotting by
@@ -902,6 +903,60 @@ def exercise_2_1():
     except Exception as exc:
         print(f"[Exercise 2.1] MySQL upload failed: {exc}")
         print("Verify docker services are running and phpMyAdmin can access db/root/pass.")
+
+
+def exercise_2_2():
+    """Guide and validate the Metabase + MySQL workflow for exercise 2.2."""
+    print("[Exercise 2.2] Metabase URL: http://localhost:3000")
+    print("[Exercise 2.2] target MySQL connection:")
+    print("  host=db")
+    print("  port=3306")
+    print("  database=test")
+    print("  username=root")
+    print("  password=pass")
+
+    compose_path = Path("exercise_2_1/compose.yaml")
+    if compose_path.is_file():
+        print("\n[Exercise 2.2] if services are not running, start them with:")
+        print("  docker compose -f exercise_2_1/compose.yaml up -d")
+    else:
+        print("\n[Exercise 2.2] warning: compose file not found at exercise_2_1/compose.yaml")
+
+    try:
+        from sqlalchemy import create_engine, text
+    except ImportError:
+        print("\n[Exercise 2.2] SQLAlchemy not found.")
+        print("Install with: pip install sqlalchemy mysql-connector-python")
+        return
+
+    # `localhost` is used from the host machine; Metabase container should use host `db`.
+    host_db_url = "mysql+mysqlconnector://root:pass@localhost:3306/test"
+    try:
+        engine = create_engine(host_db_url, echo=False)
+        with engine.connect() as conn:
+            tables = conn.execute(text("SHOW TABLES")).fetchall()
+        engine.dispose()
+    except Exception as exc:
+        print(f"\n[Exercise 2.2] MySQL host-side check failed: {exc}")
+        print("Make sure Docker services are up and MySQL is reachable on localhost:3306.")
+        return
+
+    table_names = [row[0] for row in tables]
+    print(f"\n[Exercise 2.2] MySQL reachable from host. Tables found: {len(table_names)}")
+    if table_names:
+        for name in table_names[:10]:
+            print(f"  - {name}")
+        if len(table_names) > 10:
+            print(f"  ... and {len(table_names) - 10} more")
+    else:
+        print("No tables found. Run: python main.py --exercise 2_1")
+
+    print("\n[Exercise 2.2] Metabase setup checklist:")
+    print("1. Open http://localhost:3000 and complete initial admin login.")
+    print("2. Add database -> MySQL.")
+    print("3. Use host=db, port=3306, db=test, username=root, password=pass.")
+    print("4. Save and wait for sync.")
+    print("5. Explore data from 'Browse data' and build simple questions/charts.")
 
 
 def _discover_exercises():
