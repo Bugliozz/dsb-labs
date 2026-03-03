@@ -22,8 +22,8 @@ The project combines data visualization, exploratory analysis, and Docker-based 
 ## Quick Start
 
 ```bash
-git clone git@github.com:Bugliozz/exercise1.git
-cd exercise1
+git clone git@github.com:Bugliozz/dsb-labs.git
+cd dsb-labs
 python -m venv .venv
 ```
 
@@ -88,7 +88,7 @@ docker compose -f exercise_2/step_1/compose.yaml up -d
 ## Project Structure
 
 ```text
-exercise1/
+dsb-labs/
   main.py
   requirements.txt
   exercise_1/
@@ -478,3 +478,4 @@ Returns the top 10 documents/states by `oneadult_nokids` living wage.
 ```bash
 docker compose -f exercise_2/step_1/compose.yaml down
 ```
+
