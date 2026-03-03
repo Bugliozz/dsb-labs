@@ -154,11 +154,24 @@ Exercise 2 is an end-to-end mini data platform workflow:
 
 From project root:
 
-```bash
+```powershell
+# Reset complete venv (if active)
+deactivate 2>$null
+
+# Recreate clean environment
+Remove-Item -Recurse -Force .venv
 python -m venv .venv
-# Windows PowerShell
 .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+
+# Reinstall dependencies
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+# Quick verification
+python -c "import sys, numpy; print(sys.executable); print(numpy.__version__)"
+
+# Exercise run
+python main.py --exercise 2_1
 ```
 
 Kaggle credentials are required for `2_1`:
