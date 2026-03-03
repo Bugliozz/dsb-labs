@@ -148,7 +148,7 @@ Exercise 2 is an end-to-end mini data platform workflow:
 1. ingest data into MySQL (`2_1`);
 2. explore tabular analytics in Metabase (`2_2`);
 3. reshape the same data as graph data in Neo4j (`2_3`);
-4. index the same data for search/BI in OpenSearch (`2_4`, optional).
+4. index the same data for search/BI in OpenSearch (`2_4`).
 
 ### 0. Prerequisites
 
@@ -214,12 +214,39 @@ Expected MySQL tables:
 - `bankmarketing`
 - `livingwage50states` (if dataset available)
 
+Verifica manuale in phpMyAdmin:
+
+1. Apri `http://localhost:8080`.
+2. Accedi con `root / pass`.
+3. Seleziona database `test` e apri tab `SQL`.
+4. Esegui query di esempio:
+
+```sql
+SELECT y AS outcome, COUNT(*) AS customers
+FROM bankmarketing
+GROUP BY y
+ORDER BY customers DESC;
+```
+
+Ritorna il numero di clienti per outcome della campagna (`y`, tipicamente `yes/no`).
+
+```sql
+SELECT state_territory, oneadult_nokids
+FROM livingwage50states
+ORDER BY oneadult_nokids DESC
+LIMIT 10;
+```
+
+Ritorna i 10 stati con living wage oraria piu alta per profilo `oneadult_nokids`.
+
 ### 3. Run Exercise 2.2 (MySQL -> Metabase)
 
 What it does:
 
 - validates MySQL reachability from host;
-- prints setup checklist for Metabase.
+- prints setup checklist for Metabase;
+- keeps the workflow focused on primary tables (`bankmarketing`, `livingwage50states`);
+- ignores backup tables with suffix `_copy`.
 
 Run:
 
@@ -241,13 +268,48 @@ Common issue: `RSA public key is not available`
   `allowPublicKeyRetrieval=true&useSSL=false`
 - Or create a dedicated MySQL user with `mysql_native_password`.
 
+Query manuali in Metabase:
+
+1. Apri `http://localhost:3000`.
+2. Vai su **New -> SQL query** e seleziona il DB MySQL `test`.
+3. Esegui query di esempio:
+
+```sql
+SELECT y AS outcome, COUNT(*) AS customers
+FROM bankmarketing
+GROUP BY y
+ORDER BY customers DESC;
+```
+
+Ritorna la distribuzione degli outcome marketing.
+
+```sql
+SELECT job, ROUND(AVG(balance), 2) AS avg_balance, COUNT(*) AS total_customers
+FROM bankmarketing
+GROUP BY job
+ORDER BY avg_balance DESC
+LIMIT 10;
+```
+
+Ritorna i job con saldo medio piu alto e numero record associati.
+
+```sql
+SELECT state_territory, oneadult_nokids
+FROM livingwage50states
+ORDER BY oneadult_nokids DESC
+LIMIT 10;
+```
+
+Ritorna i 10 stati con living wage oraria piu alta per un adulto senza figli.
+
 ### 4. Run Exercise 2.3 (MySQL -> Neo4j)
 
 What it does:
 
-- reads `test.bankmarketing` from MySQL;
-- imports it into Neo4j graph entities (`BankCustomer`, `Job`, `CampaignOutcome`, ...);
-- runs Cypher analyses (outcomes, jobs, month-level contacts).
+- reads MySQL primary tables `test.bankmarketing` and `test.livingwage50states`;
+- imports them into Neo4j graph entities (`BankCustomer`, `Job`, `CampaignOutcome`, `LivingWageState`, ...);
+- does not run analytical Cypher queries automatically;
+- ignores backup tables with suffix `_copy`.
 
 Run:
 
@@ -266,7 +328,42 @@ Optional tuning:
 
 - `NEO4J_IMPORT_LIMIT` (default `5000`)
 
-### 5. Run Exercise 2.4 Optional (MySQL -> OpenSearch)
+Query manuali in Neo4j Browser:
+
+1. Apri `http://localhost:7474`.
+2. Accedi con `neo4j / test12345`.
+3. Esegui query nella barra Cypher:
+
+```cypher
+MATCH (c:BankCustomer)-[:HAS_OUTCOME]->(o:CampaignOutcome)
+RETURN o.name AS outcome, count(*) AS customers
+ORDER BY customers DESC, outcome ASC;
+```
+
+Ritorna la distribuzione degli outcome della campagna nel grafo.
+
+```cypher
+MATCH (c:BankCustomer)-[:HAS_JOB]->(j:Job)
+MATCH (c)-[:HAS_OUTCOME]->(o:CampaignOutcome)
+WITH j.name AS job, count(*) AS total,
+     sum(CASE WHEN toLower(toString(o.name)) IN ['1','yes','true'] THEN 1 ELSE 0 END) AS positives
+RETURN job, total, round(100.0 * positives / total, 2) AS positive_rate_pct
+ORDER BY positive_rate_pct DESC, total DESC
+LIMIT 10;
+```
+
+Ritorna i job con tasso di risposta positiva piu alto.
+
+```cypher
+MATCH (s:LivingWageState)-[r:HAS_LIVING_WAGE]->(h:HouseholdProfile {name:'oneadult_nokids'})
+RETURN s.name AS state, r.hourly_wage AS oneadult_nokids_wage
+ORDER BY oneadult_nokids_wage DESC
+LIMIT 10;
+```
+
+Ritorna i 10 stati con living wage piu alta per profilo `oneadult_nokids`.
+
+### 5. Run Exercise 2.4 (MySQL -> OpenSearch)
 
 Start OpenSearch stack:
 
@@ -276,10 +373,11 @@ docker compose -f exercise_2_4/compose.yaml up -d
 
 What it does:
 
-- reads `test.bankmarketing` from MySQL;
-- bulk indexes documents into OpenSearch (`bankmarketing` by default);
-- prints basic aggregation preview;
-- guides visualization in Dashboards.
+- reads MySQL primary tables `test.bankmarketing` and `test.livingwage50states`;
+- bulk indexes both into OpenSearch (`bankmarketing` and `livingwage50states` by default);
+- does not run analytical OpenSearch queries automatically;
+- guides visualization in Dashboards;
+- ignores backup tables with suffix `_copy`.
 
 Run:
 
@@ -295,8 +393,57 @@ OpenSearch credentials:
 
 Optional tuning:
 
-- `OPENSEARCH_INDEX` (default `bankmarketing`)
+- `OPENSEARCH_BANK_INDEX` (default `bankmarketing`)
+- `OPENSEARCH_LIVINGWAGE_INDEX` (default `livingwage50states`)
 - `OPENSEARCH_IMPORT_LIMIT` (default `5000`)
+
+Query manuali in OpenSearch Dashboards (Dev Tools -> Console):
+
+1. Apri `http://localhost:5601`.
+2. Login con `admin / @StrongP4ssword!`.
+3. Vai in **Dev Tools -> Console**.
+4. Esegui query di esempio:
+
+```http
+GET bankmarketing/_count
+```
+
+Ritorna il numero di documenti indicizzati nell'indice `bankmarketing`.
+
+```http
+POST bankmarketing/_search
+{
+  "size": 0,
+  "aggs": {
+    "by_outcome": {
+      "terms": {
+        "field": "y",
+        "size": 10
+      }
+    }
+  }
+}
+```
+
+Ritorna una aggregazione con la distribuzione dei valori `y` (outcome campagna).
+
+```http
+POST livingwage50states/_search
+{
+  "size": 10,
+  "_source": ["state_territory", "oneadult_nokids"],
+  "sort": [
+    {
+      "oneadult_nokids": {
+        "order": "desc",
+        "missing": "_last"
+      }
+    }
+  ]
+}
+```
+
+Ritorna i 10 documenti/stati con living wage `oneadult_nokids` piu alta.
 
 ### 6. Full run sequence
 

@@ -1,6 +1,7 @@
 # Exercise 2.3 - Neo4j + Python
 
-This exercise imports the MySQL `bankmarketing` table into Neo4j and runs Cypher analyses from Python.
+This exercise imports MySQL primary tables (`bankmarketing`, `livingwage50states`) into Neo4j via Python.
+Cypher analyses are run manually in Neo4j Browser.
 
 ## Prerequisites
 
@@ -34,9 +35,10 @@ python main.py --exercise 2_3
 
 What it does:
 
-1. Reads `test.bankmarketing` from MySQL.
-2. Creates graph entities in Neo4j (`BankCustomer`, `Job`, `CampaignOutcome`, ...).
-3. Executes analysis queries (outcome distribution, top jobs by positive rate, monthly contacts).
+1. Reads `test.bankmarketing` and `test.livingwage50states` from MySQL.
+2. Creates graph entities in Neo4j (`BankCustomer`, `Job`, `CampaignOutcome`, `LivingWageState`, ...).
+3. Does not execute analytical Cypher queries automatically.
+4. Ignores backup tables with suffix `_copy`.
 
 Optional row limit (default `5000`):
 
@@ -44,3 +46,5 @@ Optional row limit (default `5000`):
 $env:NEO4J_IMPORT_LIMIT=10000
 python main.py --exercise 2_3
 ```
+
+After import, open Neo4j Browser (`http://localhost:7474`) and run sample queries from the root `README.md` section "Exercise 2 Guide (Step by Step)".

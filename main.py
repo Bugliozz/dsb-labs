@@ -10,8 +10,8 @@ Contains functions corresponding to the class assignments:
 * `exercise_1_7()` prepares a Flask + Docker lab scaffold
 * `exercise_2_1()` runs the Kaggle + MySQL lab workflow
 * `exercise_2_2()` guides the Metabase + MySQL exploration workflow
-* `exercise_2_3()` guides the Neo4j Browser tutorials + Python Cypher workflow
-* `exercise_2_4()` guides the OpenSearch dashboard exploration workflow
+* `exercise_2_3()` imports MySQL primary tables into Neo4j and guides manual Cypher analyses
+* `exercise_2_4()` imports MySQL primary tables into OpenSearch and guides dashboards
 
 The functions are called from the standard ``if __name__ == '__main__'``
 guard at the bottom; importing this module does not execute any plotting by
@@ -34,6 +34,7 @@ import seaborn as sns
 from matplotlib import gridspec
 from matplotlib.collections import EllipseCollection
 from matplotlib.colors import Normalize
+from sqlalchemy import create_engine, text
 
 
 def _read_csv_with_auto_separator(csv_path: Path) -> tuple[pd.DataFrame, str]:
@@ -888,9 +889,7 @@ def exercise_2_1():
 
         engine = create_engine(db_url, echo=False)
         converted_df.to_sql(name="bankmarketing", con=engine, if_exists="replace", index=False)
-        preview = pd.read_sql("SELECT * FROM bankmarketing LIMIT 5", engine)
-        print("\n[Exercise 2.1] MySQL table 'bankmarketing' preview:")
-        print(preview.to_string(index=False))
+        print("[Exercise 2.1] uploaded table: bankmarketing")
 
         converted_df.to_sql(name="bankmarketing_copy", con=engine, if_exists="replace", index=False)
         print("[Exercise 2.1] created table copy: bankmarketing_copy")
@@ -899,12 +898,11 @@ def exercise_2_1():
             living_wage_path = living_wage_csvs[0]
             living_wage_df, _ = _read_csv_with_auto_separator(living_wage_path)
             living_wage_df.to_sql(name="livingwage50states", con=engine, if_exists="replace", index=False)
-            living_preview = pd.read_sql("SELECT * FROM livingwage50states LIMIT 5", engine)
-            print("\n[Exercise 2.1] MySQL table 'livingwage50states' preview:")
-            print(living_preview.to_string(index=False))
+            print("[Exercise 2.1] uploaded table: livingwage50states")
             living_wage_df.to_sql(name="livingwage50states_copy", con=engine, if_exists="replace", index=False)
             print("[Exercise 2.1] created table copy: livingwage50states_copy")
 
+        print("[Exercise 2.1] open phpMyAdmin (http://localhost:8080) for manual SQL checks.")
         engine.dispose()
     except Exception as exc:
         print(f"[Exercise 2.1] MySQL upload failed: {exc}")
@@ -948,30 +946,44 @@ def exercise_2_2():
         return
 
     table_names = [row[0] for row in tables]
-    print(f"\n[Exercise 2.2] MySQL reachable from host. Tables found: {len(table_names)}")
-    if table_names:
-        for name in table_names[:10]:
+    primary_tables = ["bankmarketing", "livingwage50states"]
+    available_primary = [name for name in primary_tables if name in table_names]
+    backup_tables = sorted(name for name in table_names if name.endswith("_copy"))
+
+    print(f"\n[Exercise 2.2] MySQL reachable from host. Tables found: {len(table_names)} total")
+    if available_primary:
+        print("[Exercise 2.2] primary tables used from this point onward:")
+        for name in available_primary:
             print(f"  - {name}")
-        if len(table_names) > 10:
-            print(f"  ... and {len(table_names) - 10} more")
     else:
-        print("No tables found. Run: python main.py --exercise 2_1")
+        print("[Exercise 2.2] primary tables not found. Run: python main.py --exercise 2_1")
+
+    if backup_tables:
+        print(f"[Exercise 2.2] backup tables detected ({len(backup_tables)}) and ignored:")
+        for name in backup_tables[:10]:
+            print(f"  - {name}")
+        if len(backup_tables) > 10:
+            print(f"  ... and {len(backup_tables) - 10} more")
 
     print("\n[Exercise 2.2] Metabase setup checklist:")
     print("1. Open http://localhost:3000 and complete initial admin login.")
     print("2. Add database -> MySQL.")
     print("3. Use host=db, port=3306, db=test, username=root, password=pass.")
     print("4. Save and wait for sync.")
-    print("5. Explore data from 'Browse data' and build simple questions/charts.")
+    print("5. Explore only bankmarketing and livingwage50states in 'Browse data'.")
+    print("6. Ignore backup tables with suffix '_copy'.")
 
 
 def exercise_2_3():
-    """Load MySQL Bank Marketing data into Neo4j and run Cypher analyses."""
+    """Load MySQL primary tables into Neo4j and guide manual Cypher analyses."""
     print("[Exercise 2.3] Neo4j Browser URL: http://localhost:7474")
     print("[Exercise 2.3] credentials:")
     print("  username=neo4j")
     print("  password=test12345")
-    print("\n[Exercise 2.3] this run imports MySQL table 'bankmarketing' into Neo4j.")
+    print("\n[Exercise 2.3] this run imports MySQL primary tables into Neo4j:")
+    print("  - bankmarketing")
+    print("  - livingwage50states")
+    print("  (backup tables with suffix '_copy' are ignored)")
 
     compose_path = Path("exercise_2_1/compose.yaml")
     if compose_path.is_file():
@@ -1006,20 +1018,37 @@ def exercise_2_3():
 
     mysql_url = f"mysql+mysqlconnector://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_db}"
     print(
-        f"[Exercise 2.3] reading MySQL source: host={mysql_host} port={mysql_port} db={mysql_db} table=bankmarketing"
+        f"[Exercise 2.3] reading MySQL source: host={mysql_host} port={mysql_port} db={mysql_db} "
+        "tables=bankmarketing,livingwage50states"
     )
     print(f"[Exercise 2.3] import limit: {import_limit} rows (env NEO4J_IMPORT_LIMIT)")
 
     try:
         engine = create_engine(mysql_url, echo=False)
         with engine.connect() as conn:
-            table_exists = conn.execute(text("SHOW TABLES LIKE 'bankmarketing'")).fetchone() is not None
-        if not table_exists:
+            mysql_tables = {row[0] for row in conn.execute(text("SHOW TABLES")).fetchall()}
+
+        if "bankmarketing" not in mysql_tables:
             print("[Exercise 2.3] table 'bankmarketing' not found in MySQL.")
             print("Run first: python main.py --exercise 2_1")
             engine.dispose()
             return
-        bank_df = pd.read_sql(text("SELECT * FROM bankmarketing LIMIT :limit"), engine, params={"limit": import_limit})
+
+        bank_df = pd.read_sql(
+            text("SELECT * FROM bankmarketing LIMIT :limit"),
+            engine,
+            params={"limit": import_limit},
+        )
+        if "livingwage50states" in mysql_tables:
+            living_df = pd.read_sql(
+                text("SELECT * FROM livingwage50states LIMIT :limit"),
+                engine,
+                params={"limit": import_limit},
+            )
+        else:
+            living_df = pd.DataFrame()
+            print("[Exercise 2.3] warning: table 'livingwage50states' not found; continuing with bankmarketing only.")
+
         engine.dispose()
     except Exception as exc:
         print(f"[Exercise 2.3] failed to read MySQL source: {exc}")
@@ -1044,9 +1073,9 @@ def exercise_2_3():
             return None
         return str(value)
 
-    rows = []
+    bank_rows = []
     for idx, row in bank_df.reset_index(drop=True).iterrows():
-        rows.append(
+        bank_rows.append(
             {
                 "customer_id": f"bm_{idx + 1}",
                 "age": None if pd.isna(row.get("age")) else int(row["age"]),
@@ -1068,6 +1097,41 @@ def exercise_2_3():
             }
         )
 
+    living_state_rows = []
+    living_metric_rows = []
+    if not living_df.empty and "state_territory" in living_df.columns:
+        living_meta_cols = {"state_territory", "population_2020", "land_area_sqmi", "population_density"}
+        living_metric_cols = [col for col in living_df.columns if col not in living_meta_cols]
+
+        for _, row in living_df.iterrows():
+            state_name = _norm_label(row.get("state_territory"))
+            if not state_name:
+                continue
+
+            pop = _norm_scalar(row.get("population_2020"))
+            land = _norm_scalar(row.get("land_area_sqmi"))
+            density = _norm_scalar(row.get("population_density"))
+            living_state_rows.append(
+                {
+                    "state": state_name,
+                    "population_2020": None if pop is None else int(float(pop)),
+                    "land_area_sqmi": None if land is None else float(land),
+                    "population_density": None if density is None else float(density),
+                }
+            )
+
+            for metric in living_metric_cols:
+                wage = _norm_scalar(row.get(metric))
+                if wage is None:
+                    continue
+                living_metric_rows.append(
+                    {
+                        "state": state_name,
+                        "metric": metric,
+                        "hourly_wage": float(wage),
+                    }
+                )
+
     uri = os.getenv("NEO4J_URI", "neo4j://localhost:7687").strip() or "neo4j://localhost:7687"
     user = os.getenv("NEO4J_USER", "neo4j").strip() or "neo4j"
     password = os.getenv("NEO4J_PASSWORD", "test12345")
@@ -1081,8 +1145,10 @@ def exercise_2_3():
 
             # Keep the imported graph deterministic between runs.
             driver.execute_query("MATCH (c:BankCustomer) DETACH DELETE c")
+            driver.execute_query("MATCH (s:LivingWageState) DETACH DELETE s")
+            driver.execute_query("MATCH (h:HouseholdProfile) DETACH DELETE h")
 
-            import_query = """
+            bank_import_query = """
             UNWIND $rows AS row
             MERGE (c:BankCustomer {id: row.customer_id})
             SET c.age = row.age,
@@ -1133,60 +1199,50 @@ def exercise_2_3():
               MERGE (c)-[:HAS_OUTCOME]->(o)
             )
             """
-            driver.execute_query(import_query, rows=rows)
-            print(f"[Exercise 2.3] imported {len(rows)} customer rows from MySQL into Neo4j")
+            driver.execute_query(bank_import_query, rows=bank_rows)
+            print(f"[Exercise 2.3] imported {len(bank_rows)} bankmarketing rows into Neo4j")
 
-            queries = [
-                (
-                    "Outcome distribution",
-                    "MATCH (c:BankCustomer)-[:HAS_OUTCOME]->(o:CampaignOutcome) "
-                    "RETURN o.name AS outcome, count(*) AS customers "
-                    "ORDER BY customers DESC, outcome ASC",
-                ),
-                (
-                    "Top jobs by positive rate",
-                    "MATCH (c:BankCustomer)-[:HAS_JOB]->(j:Job) "
-                    "MATCH (c)-[:HAS_OUTCOME]->(o:CampaignOutcome) "
-                    "WITH j.name AS job, count(*) AS total, "
-                    "sum(CASE WHEN toLower(toString(o.name)) IN ['1','yes','true'] THEN 1 ELSE 0 END) AS positives "
-                    "RETURN job, total, round(100.0 * positives / total, 2) AS positive_rate_pct "
-                    "ORDER BY positive_rate_pct DESC, total DESC LIMIT 10",
-                ),
-                (
-                    "Monthly contact volume",
-                    "MATCH (c:BankCustomer)-[:CONTACTED_IN_MONTH]->(m:CampaignMonth) "
-                    "RETURN m.name AS month, count(*) AS contacts "
-                    "ORDER BY contacts DESC LIMIT 12",
-                ),
-            ]
+            if living_state_rows:
+                state_import_query = """
+                UNWIND $rows AS row
+                MERGE (s:LivingWageState {name: row.state})
+                SET s.population_2020 = row.population_2020,
+                    s.land_area_sqmi = row.land_area_sqmi,
+                    s.population_density = row.population_density
+                """
+                living_metric_query = """
+                UNWIND $rows AS row
+                MATCH (s:LivingWageState {name: row.state})
+                MERGE (h:HouseholdProfile {name: row.metric})
+                MERGE (s)-[r:HAS_LIVING_WAGE]->(h)
+                SET r.hourly_wage = row.hourly_wage
+                """
+                driver.execute_query(state_import_query, rows=living_state_rows)
+                driver.execute_query(living_metric_query, rows=living_metric_rows)
+                print(
+                    "[Exercise 2.3] imported "
+                    f"{len(living_state_rows)} livingwage state rows and {len(living_metric_rows)} wage metrics into Neo4j"
+                )
+            else:
+                print("[Exercise 2.3] no livingwage50states rows imported.")
 
-            total_rows = 0
-            for label, cypher in queries:
-                records, _, _ = driver.execute_query(cypher)
-                rows = [dict(record) for record in records]
-                print(f"\n[Exercise 2.3] {label}: {len(rows)} row(s)")
-                if rows:
-                    print(pd.DataFrame(rows).to_string(index=False))
-                    total_rows += len(rows)
-                else:
-                    print("No rows returned.")
+            print("\n[Exercise 2.3] import completed.")
+            print("[Exercise 2.3] analytical Cypher queries are no longer executed automatically.")
+            print("[Exercise 2.3] open Neo4j Browser and run the sample queries listed in README.")
     except Exception as exc:
         print(f"[Exercise 2.3] Neo4j connection/query failed: {exc}")
         print("Verify neo4j service is up and credentials are correct.")
         return
 
-    if total_rows == 0:
-        print("\n[Exercise 2.3] no rows returned by analytical queries.")
-        print("Check that the MySQL source table contains data and rerun 2_1 if needed.")
-
 
 def exercise_2_4():
-    """Import MySQL Bank Marketing data into OpenSearch and guide Dashboards usage."""
+    """Import MySQL primary tables into OpenSearch and guide Dashboards usage."""
     dashboards_url = "http://localhost:5601"
     opensearch_url = "http://localhost:9200"
     username = os.getenv("OPENSEARCH_USER", "admin").strip() or "admin"
     password = os.getenv("OPENSEARCH_PASSWORD", "@StrongP4ssword!")
-    index_name = os.getenv("OPENSEARCH_INDEX", "bankmarketing").strip() or "bankmarketing"
+    bank_index = os.getenv("OPENSEARCH_BANK_INDEX", os.getenv("OPENSEARCH_INDEX", "bankmarketing")).strip() or "bankmarketing"
+    living_index = os.getenv("OPENSEARCH_LIVINGWAGE_INDEX", "livingwage50states").strip() or "livingwage50states"
     raw_limit = os.getenv("OPENSEARCH_IMPORT_LIMIT", "5000").strip()
     try:
         import_limit = max(1, int(raw_limit))
@@ -1197,8 +1253,11 @@ def exercise_2_4():
     print("[Exercise 2.4] credentials:")
     print(f"  user={username}")
     print(f"  password={password}")
-    print("\n[Exercise 2.4] this run imports MySQL table 'bankmarketing' into OpenSearch.")
-    print(f"[Exercise 2.4] target index: {index_name} (limit={import_limit} rows)")
+    print("\n[Exercise 2.4] this run imports MySQL primary tables into OpenSearch:")
+    print(f"  - bankmarketing -> index '{bank_index}'")
+    print(f"  - livingwage50states -> index '{living_index}'")
+    print("  (backup tables with suffix '_copy' are ignored)")
+    print(f"[Exercise 2.4] import limit: {import_limit} rows per table")
 
     compose_path = Path("exercise_2_4/compose.yaml")
     if compose_path.is_file():
@@ -1215,13 +1274,6 @@ def exercise_2_4():
         print("Start the stack, then open http://localhost:5601 in your browser.")
         return
 
-    try:
-        from sqlalchemy import create_engine, text
-    except ImportError:
-        print("\n[Exercise 2.4] SQLAlchemy not found.")
-        print("Install with: pip install sqlalchemy mysql-connector-python")
-        return
-
     mysql_user = os.getenv("MYSQL_USER", "root").strip() or "root"
     mysql_password = os.getenv("MYSQL_PASSWORD", "pass")
     mysql_host = os.getenv("MYSQL_HOST", "localhost").strip() or "localhost"
@@ -1230,18 +1282,35 @@ def exercise_2_4():
     mysql_url = f"mysql+mysqlconnector://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_db}"
 
     print(
-        f"[Exercise 2.4] reading MySQL source: host={mysql_host} port={mysql_port} db={mysql_db} table=bankmarketing"
+        f"[Exercise 2.4] reading MySQL source: host={mysql_host} port={mysql_port} db={mysql_db} "
+        "tables=bankmarketing,livingwage50states"
     )
     try:
         engine = create_engine(mysql_url, echo=False)
         with engine.connect() as conn:
-            table_exists = conn.execute(text("SHOW TABLES LIKE 'bankmarketing'")).fetchone() is not None
-        if not table_exists:
+            mysql_tables = {row[0] for row in conn.execute(text("SHOW TABLES")).fetchall()}
+
+        if "bankmarketing" not in mysql_tables:
             print("[Exercise 2.4] table 'bankmarketing' not found in MySQL.")
             print("Run first: python main.py --exercise 2_1")
             engine.dispose()
             return
-        bank_df = pd.read_sql(text("SELECT * FROM bankmarketing LIMIT :limit"), engine, params={"limit": import_limit})
+
+        bank_df = pd.read_sql(
+            text("SELECT * FROM bankmarketing LIMIT :limit"),
+            engine,
+            params={"limit": import_limit},
+        )
+        if "livingwage50states" in mysql_tables:
+            living_df = pd.read_sql(
+                text("SELECT * FROM livingwage50states LIMIT :limit"),
+                engine,
+                params={"limit": import_limit},
+            )
+        else:
+            living_df = pd.DataFrame()
+            print("[Exercise 2.4] warning: table 'livingwage50states' not found; continuing with bankmarketing only.")
+
         engine.dispose()
     except Exception as exc:
         print(f"[Exercise 2.4] failed to read MySQL source: {exc}")
@@ -1284,6 +1353,33 @@ def exercise_2_4():
             body = resp.read().decode("utf-8") if resp.readable() else ""
             return resp.status, body
 
+    def _recreate_index(index_name: str):
+        try:
+            _opensearch_request(index_name, "DELETE")
+        except urllib.error.HTTPError:
+            pass
+        _opensearch_request(index_name, "PUT", payload={})
+
+    def _bulk_index_dataframe(df: pd.DataFrame, index_name: str, source_table: str, id_prefix: str):
+        _recreate_index(index_name)
+
+        lines = []
+        for i, rec in enumerate(df.to_dict(orient="records"), start=1):
+            doc = {k: _to_json_serializable(v) for k, v in rec.items()}
+            doc["source_table"] = source_table
+            lines.append(json.dumps({"index": {"_index": index_name, "_id": f"{id_prefix}_{i}"}}))
+            lines.append(json.dumps(doc))
+        bulk_payload = "\n".join(lines) + "\n"
+
+        _, bulk_body = _opensearch_request(
+            "_bulk?refresh=true",
+            "POST",
+            payload=bulk_payload,
+            content_type="application/x-ndjson",
+        )
+        bulk_json = json.loads(bulk_body) if bulk_body else {}
+        return bool(bulk_json.get("errors")), len(df)
+
     try:
         status, _ = _opensearch_request("/", "GET")
         print(f"[Exercise 2.4] OpenSearch API reachable: HTTP {status}")
@@ -1297,52 +1393,29 @@ def exercise_2_4():
         return
 
     try:
-        # Reset index to keep imports deterministic for repeated runs.
-        try:
-            _opensearch_request(index_name, "DELETE")
-        except urllib.error.HTTPError:
-            pass
-
-        _opensearch_request(index_name, "PUT", payload={})
-
-        lines = []
-        for i, rec in enumerate(bank_df.to_dict(orient="records"), start=1):
-            doc = {k: _to_json_serializable(v) for k, v in rec.items()}
-            doc["source"] = "mysql_bankmarketing"
-            lines.append(json.dumps({"index": {"_index": index_name, "_id": f"bm_{i}"}}))
-            lines.append(json.dumps(doc))
-        bulk_payload = "\n".join(lines) + "\n"
-
-        _, bulk_body = _opensearch_request(
-            "_bulk?refresh=true",
-            "POST",
-            payload=bulk_payload,
-            content_type="application/x-ndjson",
-        )
-        bulk_json = json.loads(bulk_body) if bulk_body else {}
-        if bulk_json.get("errors"):
-            print("[Exercise 2.4] bulk import completed with errors. Check OpenSearch logs.")
+        bank_errors, bank_count = _bulk_index_dataframe(bank_df, bank_index, "bankmarketing", "bm")
+        if bank_errors:
+            print(f"[Exercise 2.4] bankmarketing import completed with errors for index '{bank_index}'.")
         else:
-            print(f"[Exercise 2.4] imported {len(bank_df)} rows into OpenSearch index '{index_name}'")
+            print(f"[Exercise 2.4] imported {bank_count} rows into OpenSearch index '{bank_index}'")
 
-        _, count_body = _opensearch_request(f"{index_name}/_count", "GET")
-        count_json = json.loads(count_body) if count_body else {}
-        print(f"[Exercise 2.4] indexed document count: {count_json.get('count', 'unknown')}")
+        if not living_df.empty:
+            living_errors, living_count = _bulk_index_dataframe(
+                living_df,
+                living_index,
+                "livingwage50states",
+                "lw",
+            )
+            if living_errors:
+                print(f"[Exercise 2.4] livingwage import completed with errors for index '{living_index}'.")
+            else:
+                print(f"[Exercise 2.4] imported {living_count} rows into OpenSearch index '{living_index}'")
+        else:
+            print("[Exercise 2.4] no livingwage50states rows imported.")
 
-        _, agg_body = _opensearch_request(
-            f"{index_name}/_search",
-            "POST",
-            payload={
-                "size": 0,
-                "aggs": {"by_outcome": {"terms": {"field": "y", "size": 10}}},
-            },
-        )
-        agg_json = json.loads(agg_body) if agg_body else {}
-        buckets = agg_json.get("aggregations", {}).get("by_outcome", {}).get("buckets", [])
-        if buckets:
-            print("[Exercise 2.4] outcome distribution preview:")
-            for bucket in buckets:
-                print(f"  - y={bucket.get('key')}: {bucket.get('doc_count')}")
+        print("\n[Exercise 2.4] import completed.")
+        print("[Exercise 2.4] OpenSearch analytical queries are no longer executed automatically.")
+        print("[Exercise 2.4] open Dashboards Dev Tools and run the sample queries listed in README.")
     except Exception as exc:
         print(f"[Exercise 2.4] import/search pipeline failed: {exc}")
         print("Verify OpenSearch version compatibility and security options.")
@@ -1351,9 +1424,10 @@ def exercise_2_4():
     print("\n[Exercise 2.4] next steps in Dashboards:")
     print("1. Open http://localhost:5601.")
     print("2. Log in with admin / @StrongP4ssword! (if prompted).")
-    print(f"3. Create a Data View for index: {index_name}")
-    print("4. Open Discover and inspect imported documents.")
-    print("5. Build visualizations/dashboards on field y, job, marital, month.")
+    print(f"3. Create Data Views for indexes: {bank_index} and {living_index}.")
+    print("4. Open Dev Tools -> Console and run the sample queries in README.")
+    print("5. Open Discover and inspect documents from both tables.")
+    print("6. Build dashboards for bank outcome and living wage comparisons.")
 
 
 def _discover_exercises():
