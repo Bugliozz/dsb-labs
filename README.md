@@ -170,8 +170,6 @@ python -m pip install -r requirements.txt
 # Quick verification
 python -c "import sys, numpy; print(sys.executable); print(numpy.__version__)"
 
-# Exercise run
-python main.py --exercise 2_1
 ```
 
 Kaggle credentials are required for `2_1`:
