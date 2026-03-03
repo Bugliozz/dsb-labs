@@ -36,6 +36,33 @@ services:
     environment:
       - NEO4J_AUTH=neo4j/test12345
 
+  # OpenSearch
+  # http://localhost:5601 (Dashboards) and http://localhost:9200 (API)
+  opensearch-node1:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node1
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=@StrongP4ssword!
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    restart: always
+    depends_on:
+      - opensearch-node1
+    ports:
+      - "5601:5601"
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch-node1:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+
 networks:
   network1:
     external: true

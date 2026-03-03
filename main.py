@@ -1259,12 +1259,12 @@ def exercise_2_4():
     print("  (backup tables with suffix '_copy' are ignored)")
     print(f"[Exercise 2.4] import limit: {import_limit} rows per table")
 
-    compose_path = Path("exercise_2_4/compose.yaml")
+    compose_path = Path("exercise_2_1/compose.yaml")
     if compose_path.is_file():
         print("\n[Exercise 2.4] if services are not running, start them with:")
-        print("  docker compose -f exercise_2_4/compose.yaml up -d")
+        print("  docker compose -f exercise_2_1/compose.yaml up -d")
     else:
-        print("\n[Exercise 2.4] warning: compose file not found at exercise_2_4/compose.yaml")
+        print("\n[Exercise 2.4] warning: compose file not found at exercise_2_1/compose.yaml")
 
     try:
         with urllib.request.urlopen(dashboards_url, timeout=5) as resp:

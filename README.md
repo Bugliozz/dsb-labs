@@ -133,12 +133,6 @@ python main.py --exercise 1_6
 python main.py --exercise 1_7
 ```
 
-### Full Exercise 1 sequence
-
-```bash
-python main.py --exercise 1_2 1_3 1_4 1_5 1_6 1_7
-```
-
 ## Exercise 2 Guide (Step by Step)
 
 ### Goal
@@ -177,7 +171,7 @@ Kaggle credentials are required for `2_1`:
 - `C:\Users\<you>\.kaggle\kaggle.json`, or
 - env vars `KAGGLE_USERNAME` and `KAGGLE_KEY`.
 
-### 1. Start base services (MySQL, phpMyAdmin, Metabase, Neo4j)
+### 1. Start base services (MySQL, phpMyAdmin, Metabase, Neo4j, OpenSearch)
 
 ```bash
 docker network create network1
@@ -189,6 +183,7 @@ Service URLs:
 - phpMyAdmin: `http://localhost:8080`
 - Metabase: `http://localhost:3000`
 - Neo4j Browser: `http://localhost:7474`
+- OpenSearch Dashboards: `http://localhost:5601`
 
 ### 2. Run Exercise 2.1 (Kaggle -> MySQL)
 
@@ -365,10 +360,10 @@ Ritorna i 10 stati con living wage piu alta per profilo `oneadult_nokids`.
 
 ### 5. Run Exercise 2.4 (MySQL -> OpenSearch)
 
-Start OpenSearch stack:
+OpenSearch is in the same compose stack started at step 1. If needed, restart it with:
 
 ```bash
-docker compose -f exercise_2_4/compose.yaml up -d
+docker compose -f exercise_2_1/compose.yaml up -d
 ```
 
 What it does:
@@ -445,19 +440,8 @@ POST livingwage50states/_search
 
 Ritorna i 10 documenti/stati con living wage `oneadult_nokids` piu alta.
 
-### 6. Full run sequence
-
-```bash
-python main.py --exercise 2_1
-python main.py --exercise 2_2
-python main.py --exercise 2_3
-docker compose -f exercise_2_4/compose.yaml up -d
-python main.py --exercise 2_4
-```
-
-### 7. Shutdown
+### 6. Shutdown
 
 ```bash
 docker compose -f exercise_2_1/compose.yaml down
-docker compose -f exercise_2_4/compose.yaml down
 ```
