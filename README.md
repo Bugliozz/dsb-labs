@@ -1,4 +1,4 @@
-# Data Science for Business Labs
+﻿# Data Science for Business Labs
 
 A curated collection of Python labs developed for the **Data Science for Business** course.
 The project combines data visualization, exploratory analysis, and Docker-based data tooling workflows.
@@ -203,6 +203,11 @@ Run:
 ```bash
 python main.py --exercise 2_1
 ```
+phpMyAdmin credentials:
+
+- Server: `db` 
+- Username: `root`
+- Password: `pass`
 
 Expected MySQL tables:
 
