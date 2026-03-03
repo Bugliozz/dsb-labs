@@ -167,6 +167,9 @@ Exercise 2 is an end-to-end mini data platform workflow:
 
 ### 0. Prerequisites
 
+<details>
+  <summary>Show environment reset commands (PowerShell)</summary>
+
 From project root:
 
 ```powershell
@@ -186,6 +189,7 @@ python -m pip install -r requirements.txt
 python -c "import sys, numpy; print(sys.executable); print(numpy.__version__)"
 
 ```
+</details>
 
 Kaggle credentials are required for `2_1`:
 
@@ -230,7 +234,8 @@ Expected MySQL tables:
 - `bankmarketing`
 - `livingwage50states` (if dataset available)
 
-Manual check in phpMyAdmin:
+<details>
+  <summary>Manual check in phpMyAdmin (open)</summary>
 
 1. Open `http://localhost:8080`.
 2. Log in with `root / pass`.
@@ -254,6 +259,7 @@ LIMIT 10;
 ```
 
 Returns the 10 states with the highest hourly living wage for profile `oneadult_nokids`.
+</details>
 
 ### 3. Run Exercise 2.2 (MySQL -> Metabase)
 
@@ -284,7 +290,8 @@ Common issue: `RSA public key is not available`
   `allowPublicKeyRetrieval=true&useSSL=false`
 - Or create a dedicated MySQL user with `mysql_native_password`.
 
-Manual queries in Metabase:
+<details>
+  <summary>Manual queries in Metabase (open)</summary>
 
 1. Open `http://localhost:3000`.
 2. Go to **New -> SQL query** and select MySQL database `test`.
@@ -317,6 +324,7 @@ LIMIT 10;
 ```
 
 Returns the 10 states with highest hourly living wage for one adult without kids.
+</details>
 
 ### 4. Run Exercise 2.3 (MySQL -> Neo4j)
 
@@ -344,7 +352,8 @@ Optional tuning:
 
 - `NEO4J_IMPORT_LIMIT` (default `5000`)
 
-Manual queries in Neo4j Browser:
+<details>
+  <summary>Manual queries in Neo4j Browser (open)</summary>
 
 1. Open `http://localhost:7474`.
 2. Log in with `neo4j / test12345`.
@@ -378,6 +387,7 @@ LIMIT 10;
 ```
 
 Returns the top 10 states by living wage for profile `oneadult_nokids`.
+</details>
 
 ### 5. Run Exercise 2.4 (MySQL -> OpenSearch)
 
@@ -413,7 +423,8 @@ Optional tuning:
 - `OPENSEARCH_LIVINGWAGE_INDEX` (default `livingwage50states`)
 - `OPENSEARCH_IMPORT_LIMIT` (default `5000`)
 
-Manual queries in OpenSearch Dashboards (Dev Tools -> Console):
+<details>
+  <summary>Manual queries in OpenSearch Dashboards (Dev Tools -> Console)</summary>
 
 1. Open `http://localhost:5601`.
 2. Log in with `admin / @StrongP4ssword!`.
@@ -460,6 +471,7 @@ POST livingwage50states/_search
 ```
 
 Returns the top 10 documents/states by `oneadult_nokids` living wage.
+</details>
 
 ### 6. Shutdown
 
