@@ -11,7 +11,7 @@ This folder replicates the Docker + DokuWiki workflow from class.
 
 ## 2. Start the container
 
-From this folder (`exercise_1_6/`):
+From this folder (`exercise_1/step_6/`):
 
 ```bash
 docker compose up -d

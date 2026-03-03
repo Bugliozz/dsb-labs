@@ -8,7 +8,7 @@ Cypher analyses are run manually in Neo4j Browser.
 1. Start services:
 
 ```bash
-docker compose -f ../exercise_2_1/compose.yaml up -d
+docker compose -f ../step_1/compose.yaml up -d
 ```
 
 2. Open Neo4j Browser:

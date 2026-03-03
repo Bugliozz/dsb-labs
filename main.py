@@ -201,7 +201,7 @@ def exercise_1_2():
 
 
     fig.subplots_adjust(left=0.05, right=0.985, top=0.93, bottom=0.1)
-    out_path = Path("exercise_1_2/images/exercise1_plots.png")
+    out_path = Path("exercise_1/step_2/images/exercise1_plots.png")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
     print(f"Saved figure to {out_path}")
@@ -272,7 +272,7 @@ def exercise_1_3():
     axs[1, 1].set_xlabel("year")
     axs[1, 1].set_ylabel("month")
 
-    out_path = Path("exercise_1_3/images/exercise1_3.png")
+    out_path = Path("exercise_1/step_3/images/exercise1_3.png")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(out_path, dpi=150)
     print(f"Saved figure to {out_path}")
@@ -286,7 +286,7 @@ def exercise_1_3():
 def _find_liver_dataset():
     """Return the first existing liver CSV path from common names/locations."""
     common_names = [
-        "exercise_1_4/datasets/indian_liver_patient.csv",
+        "exercise_1/step_4/datasets/indian_liver_patient.csv",
         "indian_liver_patient.csv",
         "Indian Liver Patient Dataset (ILPD).csv",
         "indian_liver_patient_records.csv",
@@ -346,7 +346,7 @@ def exercise_1_4():
     "Indian Liver Patient Records" dataset (optional exercise).
 
     The dataset is **not** bundled with the repository; download it from
-    Kaggle and place it in ``exercise_1_4/datasets/`` with the name
+    Kaggle and place it in ``exercise_1/step_4/datasets/`` with the name
     ``indian_liver_patient.csv``. See README for details.
     """
     data_path = _find_liver_dataset()
@@ -354,13 +354,13 @@ def exercise_1_4():
         print("[Exercise 1.4] dataset not found.")
         print("Expected one of: indian_liver_patient.csv, Indian Liver Patient Dataset (ILPD).csv")
         print(f"Current working directory: {Path.cwd()}")
-        print("Place the CSV in exercise_1_4/datasets/ (or another subfolder) and rerun.")
+        print("Place the CSV in exercise_1/step_4/datasets/ (or another subfolder) and rerun.")
         return
 
     print(f"[Exercise 1.4] using dataset: {data_path}")
     df = pd.read_csv(data_path)
     df = _prepare_liver_dataframe(df)
-    image_dir = Path("exercise_1_4/images")
+    image_dir = Path("exercise_1/step_4/images")
     image_dir.mkdir(parents=True, exist_ok=True)
 
     required_cols = {
@@ -542,9 +542,9 @@ def exercise_1_5():
     Source notebook:
     https://github.com/gedeck/practical-statistics-for-data-scientists/
     """
-    sectors_path = Path("exercise_1_5/datasets/sp500_sectors.csv")
-    prices_path = Path("exercise_1_5/datasets/sp500_data.csv.gz")
-    image_dir = Path("exercise_1_5/images")
+    sectors_path = Path("exercise_1/step_5/datasets/sp500_sectors.csv")
+    prices_path = Path("exercise_1/step_5/datasets/sp500_data.csv.gz")
+    image_dir = Path("exercise_1/step_5/images")
     image_dir.mkdir(parents=True, exist_ok=True)
 
     if not sectors_path.is_file() or not prices_path.is_file():
@@ -595,7 +595,7 @@ def exercise_1_5():
 
 def exercise_1_6():
     """Prepare the Docker/DokuWiki exercise scaffold and usage instructions."""
-    exercise_dir = Path("exercise_1_6")
+    exercise_dir = Path("exercise_1/step_6")
     data_dir = exercise_dir / "dokuwiki_data"
     compose_path = exercise_dir / "docker-compose.yml"
     guide_path = exercise_dir / "README.md"
@@ -628,7 +628,7 @@ This folder replicates the Docker + DokuWiki workflow from class.
 
 ## 2. Start the container
 
-From this folder (`exercise_1_6/`):
+From this folder (`exercise_1/step_6/`):
 
 ```bash
 docker compose up -d
@@ -682,12 +682,12 @@ docker run -d -p 8080:8080 --user 1000:1000 -v ./dokuwiki_data:/storage --name d
     print(f"Created: {compose_path}")
     print(f"Created: {guide_path}")
     print(f"Persistent data directory: {data_dir}")
-    print("Run `docker compose up -d` inside exercise_1_6 to start DokuWiki.")
+    print("Run `docker compose up -d` inside exercise_1/step_6 to start DokuWiki.")
 
 
 def exercise_1_7():
     """Prepare the Flask + Docker exercise scaffold and usage instructions."""
-    exercise_dir = Path("exercise_1_7")
+    exercise_dir = Path("exercise_1/step_7")
     app_path = exercise_dir / "app.py"
     requirements_path = exercise_dir / "requirements.txt"
     dockerfile_path = exercise_dir / "Dockerfile"
@@ -773,12 +773,12 @@ docker image rm python-docker
     print(f"Created: {requirements_path}")
     print(f"Created: {dockerfile_path}")
     print(f"Created: {guide_path}")
-    print("Run `python app.py` or build the Docker image inside exercise_1_7.")
+    print("Run `python app.py` or build the Docker image inside exercise_1/step_7.")
 
 
 def exercise_2_1():
     """Run the full Kaggle + MySQL workflow for exercise 2.1."""
-    exercise_dir = Path("exercise_2_1")
+    exercise_dir = Path("exercise_2/step_1")
     compose_path = exercise_dir / "compose.yaml"
     dataset_dir = exercise_dir / "datasets"
     living_wage_dir = dataset_dir / "living_wage_50_states"
@@ -787,7 +787,7 @@ def exercise_2_1():
 
     if compose_path.is_file():
         print(f"[Exercise 2.1] using compose file: {compose_path}")
-        print("[Exercise 2.1] start services with: docker compose -f exercise_2_1/compose.yaml up -d")
+        print("[Exercise 2.1] start services with: docker compose -f exercise_2/step_1/compose.yaml up -d")
     else:
         print(f"[Exercise 2.1] warning: compose file not found at {compose_path}")
 
@@ -919,12 +919,12 @@ def exercise_2_2():
     print("  username=root")
     print("  password=pass")
 
-    compose_path = Path("exercise_2_1/compose.yaml")
+    compose_path = Path("exercise_2/step_1/compose.yaml")
     if compose_path.is_file():
         print("\n[Exercise 2.2] if services are not running, start them with:")
-        print("  docker compose -f exercise_2_1/compose.yaml up -d")
+        print("  docker compose -f exercise_2/step_1/compose.yaml up -d")
     else:
-        print("\n[Exercise 2.2] warning: compose file not found at exercise_2_1/compose.yaml")
+        print("\n[Exercise 2.2] warning: compose file not found at exercise_2/step_1/compose.yaml")
 
     try:
         from sqlalchemy import create_engine, text
@@ -985,10 +985,10 @@ def exercise_2_3():
     print("  - livingwage50states")
     print("  (backup tables with suffix '_copy' are ignored)")
 
-    compose_path = Path("exercise_2_1/compose.yaml")
+    compose_path = Path("exercise_2/step_1/compose.yaml")
     if compose_path.is_file():
         print("\n[Exercise 2.3] if services are not running, start them with:")
-        print("  docker compose -f exercise_2_1/compose.yaml up -d")
+        print("  docker compose -f exercise_2/step_1/compose.yaml up -d")
 
     try:
         from neo4j import GraphDatabase
@@ -1259,12 +1259,12 @@ def exercise_2_4():
     print("  (backup tables with suffix '_copy' are ignored)")
     print(f"[Exercise 2.4] import limit: {import_limit} rows per table")
 
-    compose_path = Path("exercise_2_1/compose.yaml")
+    compose_path = Path("exercise_2/step_1/compose.yaml")
     if compose_path.is_file():
         print("\n[Exercise 2.4] if services are not running, start them with:")
-        print("  docker compose -f exercise_2_1/compose.yaml up -d")
+        print("  docker compose -f exercise_2/step_1/compose.yaml up -d")
     else:
-        print("\n[Exercise 2.4] warning: compose file not found at exercise_2_1/compose.yaml")
+        print("\n[Exercise 2.4] warning: compose file not found at exercise_2/step_1/compose.yaml")
 
     try:
         with urllib.request.urlopen(dashboards_url, timeout=5) as resp:

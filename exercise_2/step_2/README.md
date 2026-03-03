@@ -7,7 +7,7 @@ This exercise focuses on connecting Metabase to the MySQL container and explorin
 1. Start services:
 
 ```bash
-docker compose -f ../exercise_2_1/compose.yaml up -d
+docker compose -f ../step_1/compose.yaml up -d
 ```
 
 2. Ensure tables are present (from project root):

@@ -5,10 +5,10 @@ The project combines data visualization, exploratory analysis, and Docker-based 
 
 ## Project Highlights
 
-- Clean CLI runner (`main.py`) to execute one or multiple exercises.
+- Single CLI runner (`main.py`) with interactive or explicit step selection (`--exercise`).
 - Reproducible visual analytics with `pandas`, `matplotlib`, and `seaborn`.
-- Multi-service data stack for hands-on tooling practice (`MySQL`, `phpMyAdmin`, `Metabase`, `Neo4j`).
-- Structured output folders (`datasets/`, `images/`) for each exercise.
+- Unified Exercise 2 data stack in one compose file (`MySQL`, `phpMyAdmin`, `Metabase`, `Neo4j`, `OpenSearch`).
+- Organized project layout by chapter and step (`exercise_1/step_*`, `exercise_2/step_*`).
 
 ## Tech Stack
 
@@ -16,6 +16,7 @@ The project combines data visualization, exploratory analysis, and Docker-based 
 - pandas, NumPy, Matplotlib, Seaborn
 - SQLAlchemy + MySQL connector
 - Docker / Docker Compose
+- Neo4j + OpenSearch
 - KaggleHub (for selected datasets)
 
 ## Quick Start
@@ -24,11 +25,20 @@ The project combines data visualization, exploratory analysis, and Docker-based 
 git clone git@github.com:Bugliozz/exercise1.git
 cd exercise1
 python -m venv .venv
+```
+
+Activate virtual environment and install dependencies:
+
+```bash
 # Linux/macOS
 source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+```powershell
 # Windows PowerShell
-# .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
 Run the CLI:
@@ -55,18 +65,25 @@ Run all:
 python main.py --exercise all
 ```
 
+Exercise 2 stack bootstrap (run once per session):
+
+```bash
+docker network create network1
+docker compose -f exercise_2/step_1/compose.yaml up -d
+```
+
 ## Exercises
 
-- `exercise_1_2`: multi-panel plotting layout.
-- `exercise_1_3`: composed Seaborn figure (line/scatter/bar/heatmap).
-- `exercise_1_4`: EDA on Indian Liver Patient Records.
-- `exercise_1_5`: ETF correlation analysis (heatmap + ellipse matrix).
-- `exercise_1_6`: Docker + DokuWiki lab scaffold.
-- `exercise_1_7`: Flask + Docker lab scaffold.
-- `exercise_2_1`: Kaggle ingestion + MySQL upload workflow.
-- `exercise_2_2`: Metabase login + MySQL connection and data exploration workflow.
-- `exercise_2_3`: MySQL -> Neo4j graph import and Cypher analysis workflow.
-- `exercise_2_4`: MySQL -> OpenSearch import and Dashboards visualization workflow.
+- `1_2` (`exercise_1/step_2`): multi-panel plotting layout.
+- `1_3` (`exercise_1/step_3`): composed Seaborn figure (line/scatter/bar/heatmap).
+- `1_4` (`exercise_1/step_4`): EDA on Indian Liver Patient Records.
+- `1_5` (`exercise_1/step_5`): ETF correlation analysis (heatmap + ellipse matrix).
+- `1_6` (`exercise_1/step_6`): Docker + DokuWiki lab scaffold.
+- `1_7` (`exercise_1/step_7`): Flask + Docker lab scaffold.
+- `2_1` (`exercise_2/step_1`): Kaggle ingestion + MySQL upload workflow.
+- `2_2` (`exercise_2/step_2`): Metabase login + MySQL connection and data exploration workflow.
+- `2_3` (`exercise_2/step_3`): MySQL -> Neo4j graph import and Cypher analysis workflow.
+- `2_4` (`exercise_2/step_4`): MySQL -> OpenSearch import and Dashboards visualization workflow.
 
 ## Project Structure
 
@@ -74,17 +91,21 @@ python main.py --exercise all
 exercise1/
   main.py
   requirements.txt
-  exercise_1_2/
-  exercise_1_3/
-  exercise_1_4/
-  exercise_1_5/
-  exercise_1_6/
-  exercise_1_7/
-  exercise_2_1/
-  exercise_2_2/
-  exercise_2_3/
-  exercise_2_4/
+  exercise_1/
+    step_2/
+    step_3/
+    step_4/
+    step_5/
+    step_6/
+    step_7/
+  exercise_2/
+    step_1/
+    step_2/
+    step_3/
+    step_4/
 ```
+
+Note: `exercise_1` starts from `step_2` to match the original course numbering.
 
 ## Data Notes
 
@@ -98,8 +119,8 @@ exercise1/
 
 Exercise 1 is an introductory path:
 
-1. first exercises focus on plotting and visual exploration;
-2. last exercises introduce Docker-based application/container workflows.
+1. First steps focus on plotting and visual exploration;
+2. Final steps introduce Docker-based application/container workflows.
 
 ### Intro part: charts and EDA
 
@@ -175,7 +196,7 @@ Kaggle credentials are required for `2_1`:
 
 ```bash
 docker network create network1
-docker compose -f exercise_2_1/compose.yaml up -d
+docker compose -f exercise_2/step_1/compose.yaml up -d
 ```
 
 Service URLs:
@@ -209,12 +230,12 @@ Expected MySQL tables:
 - `bankmarketing`
 - `livingwage50states` (if dataset available)
 
-Verifica manuale in phpMyAdmin:
+Manual check in phpMyAdmin:
 
-1. Apri `http://localhost:8080`.
-2. Accedi con `root / pass`.
-3. Seleziona database `test` e apri tab `SQL`.
-4. Esegui query di esempio:
+1. Open `http://localhost:8080`.
+2. Log in with `root / pass`.
+3. Select database `test` and open the `SQL` tab.
+4. Run sample queries:
 
 ```sql
 SELECT y AS outcome, COUNT(*) AS customers
@@ -223,7 +244,7 @@ GROUP BY y
 ORDER BY customers DESC;
 ```
 
-Ritorna il numero di clienti per outcome della campagna (`y`, tipicamente `yes/no`).
+Returns the number of customers by campaign outcome (`y`, usually `yes/no`).
 
 ```sql
 SELECT state_territory, oneadult_nokids
@@ -232,7 +253,7 @@ ORDER BY oneadult_nokids DESC
 LIMIT 10;
 ```
 
-Ritorna i 10 stati con living wage oraria piu alta per profilo `oneadult_nokids`.
+Returns the 10 states with the highest hourly living wage for profile `oneadult_nokids`.
 
 ### 3. Run Exercise 2.2 (MySQL -> Metabase)
 
@@ -263,11 +284,11 @@ Common issue: `RSA public key is not available`
   `allowPublicKeyRetrieval=true&useSSL=false`
 - Or create a dedicated MySQL user with `mysql_native_password`.
 
-Query manuali in Metabase:
+Manual queries in Metabase:
 
-1. Apri `http://localhost:3000`.
-2. Vai su **New -> SQL query** e seleziona il DB MySQL `test`.
-3. Esegui query di esempio:
+1. Open `http://localhost:3000`.
+2. Go to **New -> SQL query** and select MySQL database `test`.
+3. Run sample queries:
 
 ```sql
 SELECT y AS outcome, COUNT(*) AS customers
@@ -276,7 +297,7 @@ GROUP BY y
 ORDER BY customers DESC;
 ```
 
-Ritorna la distribuzione degli outcome marketing.
+Returns the distribution of marketing outcomes.
 
 ```sql
 SELECT job, ROUND(AVG(balance), 2) AS avg_balance, COUNT(*) AS total_customers
@@ -286,7 +307,7 @@ ORDER BY avg_balance DESC
 LIMIT 10;
 ```
 
-Ritorna i job con saldo medio piu alto e numero record associati.
+Returns jobs with highest average balance and associated record count.
 
 ```sql
 SELECT state_territory, oneadult_nokids
@@ -295,7 +316,7 @@ ORDER BY oneadult_nokids DESC
 LIMIT 10;
 ```
 
-Ritorna i 10 stati con living wage oraria piu alta per un adulto senza figli.
+Returns the 10 states with highest hourly living wage for one adult without kids.
 
 ### 4. Run Exercise 2.3 (MySQL -> Neo4j)
 
@@ -323,11 +344,11 @@ Optional tuning:
 
 - `NEO4J_IMPORT_LIMIT` (default `5000`)
 
-Query manuali in Neo4j Browser:
+Manual queries in Neo4j Browser:
 
-1. Apri `http://localhost:7474`.
-2. Accedi con `neo4j / test12345`.
-3. Esegui query nella barra Cypher:
+1. Open `http://localhost:7474`.
+2. Log in with `neo4j / test12345`.
+3. Run queries in the Cypher input bar:
 
 ```cypher
 MATCH (c:BankCustomer)-[:HAS_OUTCOME]->(o:CampaignOutcome)
@@ -335,7 +356,7 @@ RETURN o.name AS outcome, count(*) AS customers
 ORDER BY customers DESC, outcome ASC;
 ```
 
-Ritorna la distribuzione degli outcome della campagna nel grafo.
+Returns campaign outcome distribution in the graph.
 
 ```cypher
 MATCH (c:BankCustomer)-[:HAS_JOB]->(j:Job)
@@ -347,7 +368,7 @@ ORDER BY positive_rate_pct DESC, total DESC
 LIMIT 10;
 ```
 
-Ritorna i job con tasso di risposta positiva piu alto.
+Returns jobs with highest positive response rate.
 
 ```cypher
 MATCH (s:LivingWageState)-[r:HAS_LIVING_WAGE]->(h:HouseholdProfile {name:'oneadult_nokids'})
@@ -356,14 +377,14 @@ ORDER BY oneadult_nokids_wage DESC
 LIMIT 10;
 ```
 
-Ritorna i 10 stati con living wage piu alta per profilo `oneadult_nokids`.
+Returns the top 10 states by living wage for profile `oneadult_nokids`.
 
 ### 5. Run Exercise 2.4 (MySQL -> OpenSearch)
 
 OpenSearch is in the same compose stack started at step 1. If needed, restart it with:
 
 ```bash
-docker compose -f exercise_2_1/compose.yaml up -d
+docker compose -f exercise_2/step_1/compose.yaml up -d
 ```
 
 What it does:
@@ -392,18 +413,18 @@ Optional tuning:
 - `OPENSEARCH_LIVINGWAGE_INDEX` (default `livingwage50states`)
 - `OPENSEARCH_IMPORT_LIMIT` (default `5000`)
 
-Query manuali in OpenSearch Dashboards (Dev Tools -> Console):
+Manual queries in OpenSearch Dashboards (Dev Tools -> Console):
 
-1. Apri `http://localhost:5601`.
-2. Login con `admin / @StrongP4ssword!`.
-3. Vai in **Dev Tools -> Console**.
-4. Esegui query di esempio:
+1. Open `http://localhost:5601`.
+2. Log in with `admin / @StrongP4ssword!`.
+3. Go to **Dev Tools -> Console**.
+4. Run sample queries:
 
 ```http
 GET bankmarketing/_count
 ```
 
-Ritorna il numero di documenti indicizzati nell'indice `bankmarketing`.
+Returns the number of indexed documents in `bankmarketing`.
 
 ```http
 POST bankmarketing/_search
@@ -420,7 +441,7 @@ POST bankmarketing/_search
 }
 ```
 
-Ritorna una aggregazione con la distribuzione dei valori `y` (outcome campagna).
+Returns an aggregation for distribution of `y` values (campaign outcome).
 
 ```http
 POST livingwage50states/_search
@@ -438,10 +459,10 @@ POST livingwage50states/_search
 }
 ```
 
-Ritorna i 10 documenti/stati con living wage `oneadult_nokids` piu alta.
+Returns the top 10 documents/states by `oneadult_nokids` living wage.
 
 ### 6. Shutdown
 
 ```bash
-docker compose -f exercise_2_1/compose.yaml down
+docker compose -f exercise_2/step_1/compose.yaml down
 ```

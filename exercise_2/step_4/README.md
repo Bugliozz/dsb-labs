@@ -7,7 +7,7 @@ This optional exercise imports MySQL primary tables (`bankmarketing`, `livingwag
 From project root:
 
 ```bash
-docker compose -f exercise_2_1/compose.yaml up -d
+docker compose -f exercise_2/step_1/compose.yaml up -d
 ```
 
 ## Access
