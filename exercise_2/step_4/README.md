@@ -21,13 +21,13 @@ docker compose -f exercise_2/step_1/compose.yaml up -d
 Load MySQL tables first:
 
 ```bash
-python main.py --exercise 2_1
+python exercise_2/main.py --exercise 2_1
 ```
 
 ## MySQL -> OpenSearch import
 
 ```bash
-python main.py --exercise 2_4
+python exercise_2/main.py --exercise 2_4
 ```
 
 Then in Dashboards:
@@ -51,5 +51,5 @@ Optional tuning:
 $env:OPENSEARCH_IMPORT_LIMIT=10000
 $env:OPENSEARCH_BANK_INDEX=bankmarketing_v2
 $env:OPENSEARCH_LIVINGWAGE_INDEX=livingwage50states_v2
-python main.py --exercise 2_4
+python exercise_2/main.py --exercise 2_4
 ```

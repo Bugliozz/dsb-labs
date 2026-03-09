@@ -2,6 +2,12 @@
 
 This folder replicates the Docker + DokuWiki workflow from class.
 
+You can validate that the committed scaffold is present with:
+
+```bash
+python exercise_1/main.py --exercise 1_6
+```
+
 ## 1. Start Docker
 
 - Linux (systemd):
@@ -16,6 +22,8 @@ From this folder (`exercise_1/step_6/`):
 ```bash
 docker compose up -d
 ```
+
+If `dokuwiki_data/` does not exist yet, Docker will create it on first run.
 
 Open:
 `http://localhost:8080/`

@@ -1,0 +1,5 @@
+__pycache__/
+tests/__pycache__/
+step_1/__pycache__/
+step_1/artifacts/
+step_1/images/

@@ -13,7 +13,7 @@ docker compose -f ../step_1/compose.yaml up -d
 2. Ensure tables are present (from project root):
 
 ```bash
-python main.py --exercise 2_1
+python exercise_2/main.py --exercise 2_1
 ```
 
 ## Metabase setup
@@ -35,7 +35,7 @@ After saving, use **Browse data** to explore tables and build questions/charts.
 From project root:
 
 ```bash
-python main.py --exercise 2_2
+python exercise_2/main.py --exercise 2_2
 ```
 
 This validates host-side MySQL reachability and prints the setup checklist.

@@ -2,10 +2,16 @@
 
 This folder replicates the Flask + Docker workflow from class.
 
+You can validate that the committed scaffold is present with:
+
+```bash
+python exercise_1/main.py --exercise 1_7
+```
+
 ## 1. Run locally (without Docker)
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r exercise_1/requirements.txt
 python app.py
 ```
 

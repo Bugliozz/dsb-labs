@@ -22,7 +22,7 @@ docker compose -f ../step_1/compose.yaml up -d
 Make sure Exercise 2.1 has loaded MySQL tables:
 
 ```bash
-python main.py --exercise 2_1
+python exercise_2/main.py --exercise 2_1
 ```
 
 ## MySQL -> Neo4j import and query
@@ -30,7 +30,7 @@ python main.py --exercise 2_1
 From project root:
 
 ```bash
-python main.py --exercise 2_3
+python exercise_2/main.py --exercise 2_3
 ```
 
 What it does:
@@ -44,7 +44,7 @@ Optional row limit (default `5000`):
 
 ```bash
 $env:NEO4J_IMPORT_LIMIT=10000
-python main.py --exercise 2_3
+python exercise_2/main.py --exercise 2_3
 ```
 
 After import, open Neo4j Browser (`http://localhost:7474`) and run sample queries from the root `README.md` section "Exercise 2 Guide (Step by Step)".

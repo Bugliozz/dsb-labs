@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ames House Price API</title>
+    <style>
+      :root {
+        --bg: #f7f4ea;
+        --panel: #fffdf7;
+        --text: #1d1d1b;
+        --muted: #57534e;
+        --accent: #9a3412;
+        --border: #d6d3d1;
+        --shadow: rgba(28, 25, 23, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top left, rgba(154, 52, 18, 0.12), transparent 26%),
+          linear-gradient(180deg, #f7f4ea 0%, #f1ece0 100%);
+        color: var(--text);
+      }
+      .shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 20px 56px;
+      }
+      .hero {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 1.4fr 1fr;
+        align-items: start;
+        margin-bottom: 28px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        box-shadow: 0 18px 40px var(--shadow);
+        padding: 24px;
+      }
+      h1, h2 {
+        margin: 0 0 12px;
+        line-height: 1.15;
+      }
+      h1 {
+        font-size: clamp(2rem, 3vw, 3.4rem);
+      }
+      h2 {
+        font-size: 1.35rem;
+      }
+      p, li, code, pre {
+        font-size: 0.98rem;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .pill {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(154, 52, 18, 0.12);
+        color: var(--accent);
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      ul {
+        margin: 12px 0 0;
+        padding-left: 18px;
+      }
+      li + li {
+        margin-top: 6px;
+      }
+      pre {
+        margin: 10px 0 0;
+        padding: 14px;
+        overflow-x: auto;
+        border-radius: 14px;
+        background: #191919;
+        color: #f8fafc;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td {
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      td:first-child {
+        color: var(--muted);
+        width: 45%;
+      }
+      @media (max-width: 860px) {
+        .hero, .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <article class="card">
+          <div class="pill">Exercise 3.1</div>
+          <h1>Ames House Price API</h1>
+          <p class="muted">
+            Offline-trained regression service for estimating house prices in Ames, Iowa.
+            The service loads a prebuilt model artifact and exposes both a simple course-compatible demo endpoint
+            and an advanced JSON endpoint based on raw Ames features.
+          </p>
+          <ul>
+            <li>Selected model: <strong>{{ model_info.selected_model_name }}</strong></li>
+            <li>Training timestamp: <strong>{{ model_info.training_timestamp }}</strong></li>
+            <li>Demo feature order: <code>{{ schema.demo_feature_order }}</code></li>
+          </ul>
+        </article>
+        <aside class="card">
+          <h2>Holdout Metrics</h2>
+          <table>
+            <tr><td>RMSE</td><td>{{ "%.2f"|format(metrics.selected_model.holdout.rmse) }}</td></tr>
+            <tr><td>MAE</td><td>{{ "%.2f"|format(metrics.selected_model.holdout.mae) }}</td></tr>
+            <tr><td>MSE</td><td>{{ "%.2f"|format(metrics.selected_model.holdout.mse) }}</td></tr>
+            <tr><td>R²</td><td>{{ "%.4f"|format(metrics.selected_model.holdout.r2) }}</td></tr>
+            <tr><td>CV RMSE</td><td>{{ "%.2f"|format(metrics.selected_model.cv_rmse) }}</td></tr>
+          </table>
+        </aside>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Demo Endpoint</h2>
+          <p class="muted">GET <code>/api?data=[LotArea, YearBuilt, GrLivArea, GarageCars, OpenPorchSF]</code></p>
+          <pre>{{ demo_query }}</pre>
+        </article>
+
+        <article class="card">
+          <h2>Advanced Endpoint</h2>
+          <p class="muted">POST <code>/api/predict</code> with a JSON object keyed by raw Ames feature names.</p>
+          <pre>{{ advanced_example | tojson(indent=2) }}</pre>
+        </article>
+
+        <article class="card">
+          <h2>Input Defaults</h2>
+          <p class="muted">Omitted features fall back to the saved defaults below.</p>
+          <pre>{{ defaults | tojson(indent=2) }}</pre>
+        </article>
+
+        <article class="card">
+          <h2>Field Overview</h2>
+          <p class="muted">Raw input features accepted by the advanced endpoint.</p>
+          <ul>
+            <li>Numeric features: {{ schema.numeric_features | length }}</li>
+            <li>Categorical features: {{ schema.categorical_features | length }}</li>
+            <li>Engineered features inside the pipeline: {{ schema.engineered_features | join(", ") }}</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

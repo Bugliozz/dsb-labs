@@ -212,3 +212,6 @@ exercise_1/step_6/dokuwiki_data/
 # Exercise 2.1 downloaded datasets
 exercise_2/step_1/datasets/
 
+# Local agent/editor metadata
+.claude/
+

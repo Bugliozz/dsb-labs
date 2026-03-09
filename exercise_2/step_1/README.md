@@ -24,7 +24,7 @@ Kaggle credentials must be configured.
 From project root:
 
 ```bash
-python main.py --exercise 2_1
+python exercise_2/main.py --exercise 2_1
 ```
 
 ## Expected result

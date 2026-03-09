@@ -1,0 +1,3 @@
+-r step_1/requirements.txt
+matplotlib>=3.8,<4
+seaborn>=0.13,<0.14
