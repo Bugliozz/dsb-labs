@@ -119,7 +119,7 @@ python exercise_4/main.py collect --date 2026-03-14
 - `1_6`: Docker + DokuWiki scaffold validation
 - `1_7`: Flask + Docker scaffold validation
 
-See [exercise_1/README.md](/c:/Users/marco/OneDrive%20-%20Universit%C3%A0%20degli%20Studi%20dell'Insubria/Universit%C3%A0/Magistrale/DATA%20SCIENCE%20FOR%20BUSINESS/dsb-labs/exercise_1/README.md).
+See [exercise_1/README.md](exercise_1/README.md).
 
 ### Exercise 2
 
@@ -144,7 +144,7 @@ Service URLs:
 - Neo4j Browser: `http://localhost:7474`
 - OpenSearch Dashboards: `http://localhost:5601`
 
-See [exercise_2/README.md](/c:/Users/marco/OneDrive%20-%20Universit%C3%A0%20degli%20Studi%20dell'Insubria/Universit%C3%A0/Magistrale/DATA%20SCIENCE%20FOR%20BUSINESS/dsb-labs/exercise_2/README.md).
+See [exercise_2/README.md](exercise_2/README.md).
 
 ### Exercise 3
 
@@ -153,7 +153,7 @@ Exercise 3 contains the Ames house-price workflow and Flask API:
 - `3_1` with `train`: build plots, train models, save artifacts
 - `3_1` with `serve`: start the local inference app
 
-See [exercise_3/README.md](/c:/Users/marco/OneDrive%20-%20Universit%C3%A0%20degli%20Studi%20dell'Insubria/Universit%C3%A0/Magistrale/DATA%20SCIENCE%20FOR%20BUSINESS/dsb-labs/exercise_3/README.md).
+See [exercise_3/README.md](exercise_3/README.md).
 
 ### Exercise 4
 
@@ -162,7 +162,7 @@ Exercise 4 contains the Malpensa web-scraping service and its GCP deployment not
 - `4_1`: Flask collector that can save JSON locally or upload to Google Cloud Storage
 - verified deployment path for Cloud Run + Cloud Scheduler
 
-See [exercise_4/README.md](/c:/Users/marco/OneDrive%20-%20Universit%C3%A0%20degli%20Studi%20dell'Insubria/Universit%C3%A0/Magistrale/DATA%20SCIENCE%20FOR%20BUSINESS/dsb-labs/exercise_4/README.md).
+See [exercise_4/README.md](exercise_4/README.md).
 
 ## Tests
 
