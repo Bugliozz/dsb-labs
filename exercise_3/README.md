@@ -43,3 +43,12 @@ Run Exercise 3 tests:
 ```bash
 python -m unittest exercise_3.tests.test_step_1.AmesApiTestCase
 ```
+
+## Cloud Run
+
+The inference API is also deployed on Cloud Run.
+
+- service: `ames-house-price-api`
+- region: `europe-west1`
+- verified on `2026-03-16`
+- URL: `https://ames-house-price-api-47880508774.europe-west1.run.app`

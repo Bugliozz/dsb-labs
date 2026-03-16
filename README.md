@@ -2,7 +2,7 @@
 
 Repository for the **Data Science for Business** course labs.
 
-The root `main.py` is now a lightweight launcher: it asks which chapter and step to run, then dispatches execution to the local runner inside `exercise_1/`, `exercise_2/`, or `exercise_3/`.
+The root `main.py` is now a lightweight launcher: it asks which chapter and step to run, then dispatches execution to the local runner inside `exercise_1/`, `exercise_2/`, `exercise_3/`, or `exercise_4/`.
 
 ## Project layout
 
@@ -38,6 +38,11 @@ dsb-labs/
     README.md
     tests/
     step_1/
+  exercise_4/
+    app.py
+    main.py
+    Dockerfile
+    README.md
 ```
 
 Note: `exercise_1` starts from `step_2` to match the original course numbering.
@@ -56,6 +61,7 @@ Or install only a chapter:
 python -m pip install -r exercise_1/requirements.txt
 python -m pip install -r exercise_2/requirements.txt
 python -m pip install -r exercise_3/requirements.txt
+python -m pip install -r exercise_4/requirements.txt
 ```
 
 ## Root launcher
@@ -74,6 +80,7 @@ python main.py --chapter 2 --exercise all
 python main.py --exercise 1_2 2_4
 python main.py --exercise 3_1 --command train
 python main.py --exercise 3_1 --command serve
+python main.py --exercise 4_1
 ```
 
 Rules:
@@ -89,6 +96,7 @@ python exercise_1/main.py
 python exercise_2/main.py
 python exercise_3/main.py train
 python exercise_3/main.py serve
+python exercise_4/main.py
 ```
 
 Direct step selection:
@@ -97,6 +105,7 @@ Direct step selection:
 python exercise_1/main.py --exercise 1_2 1_5
 python exercise_2/main.py --exercise 2_1 2_4
 python exercise_3/main.py train --exercise 3_1
+python exercise_4/main.py collect --date 2026-03-14
 ```
 
 ## Chapter overview
@@ -146,12 +155,22 @@ Exercise 3 contains the Ames house-price workflow and Flask API:
 
 See [exercise_3/README.md](/c:/Users/marco/OneDrive%20-%20Universit%C3%A0%20degli%20Studi%20dell'Insubria/Universit%C3%A0/Magistrale/DATA%20SCIENCE%20FOR%20BUSINESS/dsb-labs/exercise_3/README.md).
 
+### Exercise 4
+
+Exercise 4 contains the Malpensa web-scraping service and its GCP deployment notes:
+
+- `4_1`: Flask collector that can save JSON locally or upload to Google Cloud Storage
+- verified deployment path for Cloud Run + Cloud Scheduler
+
+See [exercise_4/README.md](/c:/Users/marco/OneDrive%20-%20Universit%C3%A0%20degli%20Studi%20dell'Insubria/Universit%C3%A0/Magistrale/DATA%20SCIENCE%20FOR%20BUSINESS/dsb-labs/exercise_4/README.md).
+
 ## Tests
 
 Runner-level tests:
 
 ```bash
 python -m unittest tests.test_main_launcher
+python -m unittest tests.test_exercise_4_app
 python -m unittest exercise_1.tests.test_runner
 python -m unittest exercise_2.tests.test_runner
 python -m unittest exercise_3.tests.test_step_1

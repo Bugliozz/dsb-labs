@@ -40,6 +40,14 @@ CATALOG: dict[str, dict[str, object]] = {
             "3_1": "Ames regression workflow and API",
         },
     },
+    "4": {
+        "title": "Exercise 4",
+        "runner": REPO_ROOT / "exercise_4" / "main.py",
+        "description": "Malpensa web scraping with Flask, Cloud Run, Storage, and Scheduler.",
+        "exercises": {
+            "4_1": "Malpensa flights collector and GCP deployment",
+        },
+    },
 }
 
 ALL_TOKEN_ALIASES = {"all", "tutti", "*"}

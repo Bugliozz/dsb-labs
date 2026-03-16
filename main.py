@@ -25,7 +25,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Launch a chapter-local exercise runner.")
     parser.add_argument(
         "--chapter",
-        help="Chapter to run (1, 2, or 3). If omitted, an interactive chapter prompt is shown.",
+        help="Chapter to run (1, 2, 3, or 4). If omitted, an interactive chapter prompt is shown.",
     )
     parser.add_argument(
         "-e",

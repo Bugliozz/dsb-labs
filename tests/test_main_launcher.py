@@ -56,3 +56,14 @@ class RootLauncherTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit):
             root_main.main(["--exercise", "all"])
         subprocess_run.assert_not_called()
+
+    @patch("main.subprocess.run")
+    def test_noninteractive_exercise_four_dispatches_laboratory_runner(self, subprocess_run):
+        subprocess_run.return_value = Mock(returncode=0)
+
+        root_main.main(["--exercise", "4_1"])
+
+        subprocess_run.assert_called_once()
+        command = subprocess_run.call_args.args[0]
+        self.assertEqual(Path(command[1]).parent.name, "exercise_4")
+        self.assertEqual(command[-2:], ["--exercise", "4_1"])

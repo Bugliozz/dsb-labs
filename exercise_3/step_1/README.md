@@ -70,3 +70,26 @@ docker run --rm -p 5000:5000 ames-house-price-api
 ```
 
 The Docker image contains only the inference service and prebuilt artifacts. Train the model first from the repo root so `exercise_3/step_1/artifacts/` exists before building the image.
+
+## 5. Deploy to Cloud Run
+
+If the lab for **2026-03-16** only requires publishing the already completed API, this step is the missing operational piece.
+
+From the project root:
+
+```bash
+gcloud config set project linear-potion-490413-s9
+gcloud run deploy ames-house-price-api --source exercise_3/step_1 --region=europe-west1 --allow-unauthenticated --port 5000
+```
+
+After deployment, verify:
+
+```bash
+curl https://YOUR-SERVICE-URL/api/health
+curl "https://YOUR-SERVICE-URL/api?data=[10603,1977,1610,2,68]"
+```
+
+Verified deployment on `2026-03-16`:
+
+- service: `ames-house-price-api`
+- URL: `https://ames-house-price-api-47880508774.europe-west1.run.app`
