@@ -2,3 +2,4 @@
 -r exercise_2/requirements.txt
 -r exercise_3/requirements.txt
 -r exercise_4/requirements.txt
+-r exercise_5/requirements.txt

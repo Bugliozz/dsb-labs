@@ -48,6 +48,15 @@ CATALOG: dict[str, dict[str, object]] = {
             "4_1": "Malpensa flights collector and GCP deployment",
         },
     },
+    "5": {
+        "title": "Exercise 5",
+        "runner": REPO_ROOT / "exercise_5" / "main.py",
+        "description": "MNIST classification and Bank Customer Churn prediction.",
+        "exercises": {
+            "5_1": "MNIST digit classification (binary + multiclass)",
+            "5_2": "Bank Churn prediction (GridSearchCV, beat AutoML)",
+        },
+    },
 }
 
 ALL_TOKEN_ALIASES = {"all", "tutti", "*"}

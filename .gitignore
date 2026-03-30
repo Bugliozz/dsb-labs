@@ -212,6 +212,11 @@ exercise_1/step_6/dokuwiki_data/
 # Exercise 2.1 downloaded datasets
 exercise_2/step_1/datasets/
 
+# Exercise 5 runtime artifacts
+exercise_5/step_1/images/
+exercise_5/step_2/images/
+exercise_5/step_2/grid_search_cache.pkl
+
 # Local agent/editor metadata
 .claude/
 

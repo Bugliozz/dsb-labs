@@ -2,7 +2,7 @@
 
 Repository for the **Data Science for Business** course labs.
 
-The root `main.py` is now a lightweight launcher: it asks which chapter and step to run, then dispatches execution to the local runner inside `exercise_1/`, `exercise_2/`, `exercise_3/`, or `exercise_4/`.
+The root `main.py` is now a lightweight launcher: it asks which chapter and step to run, then dispatches execution to the local runner inside `exercise_1/`, `exercise_2/`, `exercise_3/`, `exercise_4/`, or `exercise_5/`.
 
 ## Project layout
 
@@ -43,6 +43,14 @@ dsb-labs/
     main.py
     Dockerfile
     README.md
+  exercise_5/
+    main.py
+    core.py
+    requirements.txt
+    README.md
+    tests/
+    step_1/
+    step_2/
 ```
 
 Note: `exercise_1` starts from `step_2` to match the original course numbering.
@@ -62,6 +70,7 @@ python -m pip install -r exercise_1/requirements.txt
 python -m pip install -r exercise_2/requirements.txt
 python -m pip install -r exercise_3/requirements.txt
 python -m pip install -r exercise_4/requirements.txt
+python -m pip install -r exercise_5/requirements.txt
 ```
 
 ## Root launcher
@@ -81,6 +90,7 @@ python main.py --exercise 1_2 2_4
 python main.py --exercise 3_1 --command train
 python main.py --exercise 3_1 --command serve
 python main.py --exercise 4_1
+python main.py --exercise 5_1 5_2
 ```
 
 Rules:
@@ -97,6 +107,7 @@ python exercise_2/main.py
 python exercise_3/main.py train
 python exercise_3/main.py serve
 python exercise_4/main.py
+python exercise_5/main.py
 ```
 
 Direct step selection:
@@ -106,6 +117,7 @@ python exercise_1/main.py --exercise 1_2 1_5
 python exercise_2/main.py --exercise 2_1 2_4
 python exercise_3/main.py train --exercise 3_1
 python exercise_4/main.py collect --date 2026-03-14
+python exercise_5/main.py --exercise 5_1 5_2
 ```
 
 ## Chapter overview
@@ -164,6 +176,15 @@ Exercise 4 contains the Malpensa web-scraping service and its GCP deployment not
 
 See [exercise_4/README.md](exercise_4/README.md).
 
+### Exercise 5
+
+Exercise 5 covers classification problems:
+
+- `5_1`: MNIST digit classification (binary is-5 detector + multiclass 0-9)
+- `5_2`: Bank Customer Churn prediction (feature engineering + GridSearchCV to beat AutoML)
+
+See [exercise_5/README.md](exercise_5/README.md).
+
 ## Tests
 
 Runner-level tests:
@@ -174,4 +195,5 @@ python -m unittest tests.test_exercise_4_app
 python -m unittest exercise_1.tests.test_runner
 python -m unittest exercise_2.tests.test_runner
 python -m unittest exercise_3.tests.test_step_1
+python -m unittest exercise_5.tests.test_runner
 ```
